@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>한국어 검사 툴</title>
+  <title>언어 검사 툴</title>
   <script src="https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -16,17 +16,8 @@
       padding: 32px 16px;
     }
 
-    h1 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-
-    .subtitle {
-      font-size: 0.85rem;
-      color: #666;
-      margin-bottom: 24px;
-    }
+    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 6px; }
+    .subtitle { font-size: 0.85rem; color: #666; margin-bottom: 24px; }
 
     .card {
       background: #fff;
@@ -35,7 +26,6 @@
       padding: 20px;
       margin-bottom: 20px;
     }
-
     .card h2 {
       font-size: 0.9rem;
       font-weight: 600;
@@ -44,6 +34,31 @@
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
+
+    .lang-select-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lang-select-row label { font-size: 0.9rem; font-weight: 600; color: #444; white-space: nowrap; }
+
+    select {
+      padding: 8px 14px;
+      border: 1.5px solid #dde1ea;
+      border-radius: 7px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+      background: #fff;
+      transition: border-color 0.2s;
+    }
+    select:focus { border-color: #4f7ef8; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; color: #555; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
 
     textarea {
       width: 100%;
@@ -70,19 +85,11 @@
       cursor: pointer;
       transition: background 0.2s, border-color 0.2s;
     }
-    .drop-zone:hover, .drop-zone.drag-over {
-      background: #f0f4ff;
-      border-color: #4f7ef8;
-    }
+    .drop-zone:hover, .drop-zone.drag-over { background: #f0f4ff; border-color: #4f7ef8; }
     .drop-zone input[type="file"] { display: none; }
     .drop-zone .icon { font-size: 2rem; margin-bottom: 8px; }
 
-    .btn-row {
-      display: flex;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
+    .btn-row { display: flex; gap: 10px; margin-top: 16px; }
     button {
       padding: 10px 24px;
       border: none;
@@ -93,11 +100,9 @@
       transition: opacity 0.15s;
     }
     button:hover { opacity: 0.85; }
+    #btnCheck { background: #4f7ef8; color: #fff; }
+    #btnClear { background: #eef0f5; color: #555; }
 
-    #btnCheck  { background: #4f7ef8; color: #fff; }
-    #btnClear  { background: #eef0f5; color: #555; }
-
-    /* ---- results ---- */
     #results { display: none; }
 
     .badge-ok {
@@ -119,19 +124,10 @@
       font-weight: 600;
     }
 
-    .result-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
+    .result-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
     .result-header h2 { margin-bottom: 0; }
 
-    .result-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
+    .result-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     .result-table th {
       background: #f4f6f9;
       text-align: left;
@@ -148,41 +144,26 @@
     .result-table tr:last-child td { border-bottom: none; }
     .result-table tr:hover td { background: #f9fafe; }
 
-    .line-num {
+    .line-num { font-weight: 700; color: #4f7ef8; white-space: nowrap; }
+    .line-content { font-family: 'Consolas', 'Courier New', 'DejaVu Sans Mono', monospace; word-break: break-all; }
+
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag { border-radius: 5px; padding: 3px 10px; font-size: 0.82rem; }
+
+    .summary-section { margin-top: 20px; }
+    .summary-script-label {
+      font-size: 0.8rem;
       font-weight: 700;
-      color: #4f7ef8;
-      white-space: nowrap;
-    }
-
-    .line-content {
-      font-family: 'Consolas', 'Courier New', 'DejaVu Sans Mono', monospace;
-      word-break: break-all;
-    }
-
-    .ko-highlight {
-      background: #ffeaa7;
-      border-radius: 3px;
-      padding: 1px 3px;
-    }
-
-    .tag-list {
+      color: #444;
+      margin-bottom: 6px;
       display: flex;
-      flex-wrap: wrap;
+      align-items: center;
       gap: 6px;
-      margin-top: 12px;
     }
-    .tag {
-      background: #eef2ff;
-      color: #3a56d4;
-      border-radius: 5px;
-      padding: 3px 10px;
-      font-size: 0.82rem;
-    }
+    .summary-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex-shrink: 0; }
+    .summary-group { margin-bottom: 14px; }
 
-    .max-width {
-      max-width: 860px;
-      margin: 0 auto;
-    }
+    .max-width { max-width: 860px; margin: 0 auto; }
 
     .deploy-info {
       position: fixed;
@@ -195,16 +176,34 @@
 </head>
 <body>
 <div class="max-width">
-  <h1>한국어 검사 툴</h1>
-  <p class="subtitle">공지사항 번역 후 남아 있는 한국어를 찾아줍니다.</p>
+  <h1>언어 검사 툴</h1>
+  <p class="subtitle">번역 후 잔류하는 불필요한 언어를 찾아줍니다.</p>
 
   <div class="card">
-    <h2>텍스트 직접 입력</h2>
-    <textarea id="inputText" placeholder="번역된 공지사항 텍스트를 여기에 붙여넣으세요..."></textarea>
+    <h2>기준 언어 설정</h2>
+    <div class="lang-select-row">
+      <label>이 문서의 언어:</label>
+      <select id="baseLang">
+        <option value="korean">한국어</option>
+        <option value="japanese">일본어</option>
+        <option value="chinese">중국어</option>
+        <option value="latin">영어 / 라틴어 (스페인어, 프랑스어 등)</option>
+        <option value="arabic">아랍어</option>
+        <option value="cyrillic">러시아어</option>
+        <option value="thai">태국어</option>
+      </select>
+    </div>
+    <div id="extraAllowWrap" style="margin-top:12px;"></div>
+    <div class="legend" id="legend"></div>
   </div>
 
   <div class="card">
-    <h2>파일 업로드 (.txt / .md / .csv 등)</h2>
+    <h2>텍스트 직접 입력</h2>
+    <textarea id="inputText" placeholder="텍스트를 여기에 붙여넣으세요..."></textarea>
+  </div>
+
+  <div class="card">
+    <h2>파일 업로드 (.txt / .md / .docx 등)</h2>
     <div class="drop-zone" id="dropZone">
       <div class="icon">📂</div>
       <div>파일을 여기로 끌어오거나 클릭해서 선택하세요</div>
@@ -217,7 +216,6 @@
     <button id="btnClear">초기화</button>
   </div>
 
-  <!-- results -->
   <div id="results" class="card" style="margin-top:24px;">
     <div class="result-header">
       <h2>검사 결과</h2>
@@ -230,58 +228,153 @@
 <div class="deploy-info" id="deployInfo"></div>
 
 <script>
-  const KOREAN = /[ᄀ-ᇿ㄰-㆏ꥠ-꥿가-힣ힰ-퟿]+/g;
+  // ── Script definitions ─────────────────────────────────────
+  const SCRIPTS = {
+    korean:   { label: '한국어',      color: '#f9c74f', ranges: [[0xAC00,0xD7A3],[0x1100,0x11FF],[0x3130,0x318F],[0xA960,0xA97F],[0xD7B0,0xD7FF]] },
+    japanese: { label: '일본어',      color: '#90be6d', ranges: [[0x3040,0x309F],[0x30A0,0x30FF],[0x31F0,0x31FF],[0xFF65,0xFF9F]] },
+    cjk:      { label: '한자 (CJK)', color: '#f28482', ranges: [[0x4E00,0x9FFF],[0x3400,0x4DBF],[0xF900,0xFAFF]] },
+    latin:    { label: '라틴어',      color: '#90caf9', ranges: [[0x0041,0x005A],[0x0061,0x007A],[0x00C0,0x024F],[0x1E00,0x1EFF]] },
+    arabic:   { label: '아랍어',      color: '#ffb347', ranges: [[0x0600,0x06FF],[0x0750,0x077F],[0xFB50,0xFDFF],[0xFE70,0xFEFF]] },
+    cyrillic: { label: '러시아어',    color: '#ce93d8', ranges: [[0x0400,0x04FF]] },
+    thai:     { label: '태국어',      color: '#80cbc4', ranges: [[0x0E00,0x0E7F]] },
+  };
 
-  const inputText = document.getElementById('inputText');
-  const dropZone  = document.getElementById('dropZone');
-  const fileInput = document.getElementById('fileInput');
-  const results   = document.getElementById('results');
-  const badge     = document.getElementById('badge');
+  // Allowed scripts per base language selection
+  const ALLOWED = {
+    korean:   new Set(['korean']),
+    japanese: new Set(['japanese', 'cjk']),
+    chinese:  new Set(['cjk']),
+    latin:    new Set(['latin']),
+    arabic:   new Set(['arabic']),
+    cyrillic: new Set(['cyrillic']),
+    thai:     new Set(['thai']),
+  };
+
+  function getScript(cp) {
+    for (const [key, info] of Object.entries(SCRIPTS)) {
+      for (const [lo, hi] of info.ranges) {
+        if (cp >= lo && cp <= hi) return key;
+      }
+    }
+    return null;
+  }
+
+  function isNeutral(cp) {
+    if (cp <= 0x0020) return true;
+    if (cp >= 0x0021 && cp <= 0x002F) return true;
+    if (cp >= 0x0030 && cp <= 0x0039) return true; // digits 0-9
+    if (cp >= 0x003A && cp <= 0x0040) return true;
+    if (cp >= 0x005B && cp <= 0x0060) return true;
+    if (cp >= 0x007B && cp <= 0x007E) return true;
+    if (cp >= 0x00A0 && cp <= 0x00BF) return true;
+    if (cp >= 0x2000 && cp <= 0x206F) return true;
+    if (cp >= 0x20A0 && cp <= 0x20CF) return true;
+    if (cp >= 0x2100 && cp <= 0x2BFF) return true;
+    if (cp >= 0x3000 && cp <= 0x303F) return true;
+    if (cp >= 0xFE30 && cp <= 0xFE4F) return true;
+    if (cp >= 0xFF00 && cp <= 0xFF0F) return true;
+    if (cp >= 0xFF1A && cp <= 0xFF20) return true;
+    if (cp >= 0xFF3B && cp <= 0xFF40) return true;
+    if (cp >= 0xFF5B && cp <= 0xFF60) return true;
+    if (cp >= 0x1F300) return true;
+    return false;
+  }
+
+  // ── DOM refs ───────────────────────────────────────────────
+  const inputText  = document.getElementById('inputText');
+  const dropZone   = document.getElementById('dropZone');
+  const fileInput  = document.getElementById('fileInput');
+  const results    = document.getElementById('results');
+  const badge      = document.getElementById('badge');
   const resultBody = document.getElementById('resultBody');
+  const baseLangEl = document.getElementById('baseLang');
+  const legendEl   = document.getElementById('legend');
 
-  // ── file upload ──────────────────────────────────────────
+  // 기본적으로 라틴(영어)을 허용하는 베이스 언어 목록
+  const DEFAULT_LATIN_ALLOWED = new Set(['japanese', 'chinese', 'arabic', 'cyrillic', 'thai']);
+
+  // ── Extra allow checkboxes ─────────────────────────────────
+  const extraAllowWrap = document.getElementById('extraAllowWrap');
+
+  function renderExtraAllow() {
+    const base = baseLangEl.value;
+    const baseAllowed = ALLOWED[base];
+    const others = Object.entries(SCRIPTS).filter(([k]) => !baseAllowed.has(k));
+
+    extraAllowWrap.innerHTML = `
+      <div style="font-size:0.82rem;font-weight:600;color:#555;margin-bottom:6px;">추가로 허용할 언어 (체크 시 무시)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        ${others.map(([key, info]) => {
+          const checked = (key === 'latin' && DEFAULT_LATIN_ALLOWED.has(base)) ? 'checked' : '';
+          return `<label style="display:flex;align-items:center;gap:5px;font-size:0.85rem;cursor:pointer;">
+            <input type="checkbox" class="extra-allow" value="${key}" ${checked}>
+            <span class="legend-dot" style="background:${info.color};width:10px;height:10px;border-radius:2px;"></span>
+            ${info.label}
+          </label>`;
+        }).join('')}
+      </div>`;
+
+    document.querySelectorAll('.extra-allow').forEach(cb =>
+      cb.addEventListener('change', renderLegend)
+    );
+    renderLegend();
+  }
+
+  function getEffectiveAllowed() {
+    const base = new Set(ALLOWED[baseLangEl.value]);
+    document.querySelectorAll('.extra-allow:checked').forEach(cb => base.add(cb.value));
+    return base;
+  }
+
+  // ── Legend ─────────────────────────────────────────────────
+  function renderLegend() {
+    const allowed = getEffectiveAllowed();
+    const foreign = Object.entries(SCRIPTS).filter(([k]) => !allowed.has(k));
+    legendEl.innerHTML = foreign.length
+      ? `<div style="font-size:0.78rem;color:#888;margin-right:6px;">검사 대상:</div>` +
+        foreign.map(([, info]) =>
+          `<div class="legend-item">
+            <div class="legend-dot" style="background:${info.color}"></div>
+            <span>${info.label}</span>
+          </div>`
+        ).join('')
+      : `<div style="font-size:0.78rem;color:#1d8348;">모든 언어가 허용 상태입니다.</div>`;
+  }
+
+  baseLangEl.addEventListener('change', renderExtraAllow);
+  renderExtraAllow();
+
+  // ── File upload ────────────────────────────────────────────
   dropZone.addEventListener('click', () => fileInput.click());
-
-  dropZone.addEventListener('dragover', e => {
-    e.preventDefault();
-    dropZone.classList.add('drag-over');
-  });
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
   dropZone.addEventListener('drop', e => {
     e.preventDefault();
     dropZone.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) readFile(file);
+    if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
   });
-
-  fileInput.addEventListener('change', () => {
-    if (fileInput.files[0]) readFile(fileInput.files[0]);
-  });
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) readFile(fileInput.files[0]); });
 
   function readFile(file) {
     if (file.name.endsWith('.docx')) {
-      const reader = new FileReader();
-      reader.onload = e => {
-        mammoth.extractRawText({ arrayBuffer: e.target.result })
-          .then(result => { inputText.value = result.value; })
-          .catch(() => { alert('워드 파일을 읽는 데 실패했습니다.'); });
-      };
-      reader.readAsArrayBuffer(file);
+      const r = new FileReader();
+      r.onload = e => mammoth.extractRawText({ arrayBuffer: e.target.result })
+        .then(res => { inputText.value = res.value; })
+        .catch(() => alert('워드 파일을 읽는 데 실패했습니다.'));
+      r.readAsArrayBuffer(file);
     } else {
-      const reader = new FileReader();
-      reader.onload = e => {
+      const r = new FileReader();
+      r.onload = e => {
         const bytes = new Uint8Array(e.target.result);
         let text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
-        if (text.includes('�')) {
-          text = new TextDecoder('windows-1252').decode(bytes);
-        }
+        if (text.includes('')) text = new TextDecoder('windows-1252').decode(bytes);
         inputText.value = text;
       };
-      reader.readAsArrayBuffer(file);
+      r.readAsArrayBuffer(file);
     }
   }
 
-  // ── check ─────────────────────────────────────────────────
+  // ── Buttons ────────────────────────────────────────────────
   document.getElementById('btnCheck').addEventListener('click', () => {
     const text = inputText.value;
     if (!text.trim()) { alert('텍스트를 입력하거나 파일을 업로드해주세요.'); return; }
@@ -292,77 +385,135 @@
     inputText.value = '';
     fileInput.value = '';
     results.style.display = 'none';
-    dropZone.querySelector('div:last-of-type').textContent = '파일을 여기로 끌어오거나 클릭해서 선택하세요';
   });
 
+  // ── Analysis ───────────────────────────────────────────────
   function analyse(text) {
+    const allowed = getEffectiveAllowed();
     const lines = text.split('\n');
-    const found = [];
-    const allKorean = [];
+    const foundLines = [];
+    const totalByScript = {};
 
     lines.forEach((line, idx) => {
-      const matches = [...line.matchAll(KOREAN)].map(m => m[0]);
-      if (matches.length) {
-        found.push({ lineNum: idx + 1, content: line, matches });
-        allKorean.push(...matches);
+      const { highlighted, byScript } = processLine(line, allowed);
+      if (Object.keys(byScript).length > 0) {
+        foundLines.push({ lineNum: idx + 1, highlighted, byScript });
+        for (const [script, tokens] of Object.entries(byScript)) {
+          if (!totalByScript[script]) totalByScript[script] = new Set();
+          tokens.forEach(t => totalByScript[script].add(t));
+        }
       }
     });
 
     results.style.display = 'block';
 
-    if (found.length === 0) {
-      badge.outerHTML = '<span id="badge" class="badge-ok">한국어 없음</span>';
-      resultBody.innerHTML = '<p style="color:#1d8348;font-size:0.9rem;">한국어가 발견되지 않았습니다.</p>';
+    const newBadge = document.createElement('span');
+    newBadge.id = 'badge';
+
+    if (foundLines.length === 0) {
+      newBadge.className = 'badge-ok';
+      newBadge.textContent = '이상 없음';
+      badge.replaceWith(newBadge);
+      resultBody.innerHTML = '<p style="color:#1d8348;font-size:0.9rem;">다른 언어가 발견되지 않았습니다.</p>';
       return;
     }
 
-    // badge 갱신
-    const newBadge = document.createElement('span');
-    newBadge.id = 'badge';
     newBadge.className = 'badge-warn';
-    newBadge.textContent = `${found.length}줄에서 발견`;
+    newBadge.textContent = `${foundLines.length}줄에서 발견`;
     badge.replaceWith(newBadge);
 
-    // 표 생성
     let html = `
       <table class="result-table">
         <thead>
           <tr>
-            <th style="width:64px;">줄</th>
-            <th>내용 (한국어 강조)</th>
-            <th>발견된 한국어</th>
+            <th style="width:56px;">줄</th>
+            <th>내용 (이질 언어 강조)</th>
+            <th>발견된 언어</th>
           </tr>
-        </thead>
-        <tbody>`;
+        </thead><tbody>`;
 
-    found.forEach(r => {
-      const highlighted = escapeHtml(r.content).replace(
-        /[ᄀ-ᇿ㄰-㆏ꥠ-꥿가-힣ힰ-퟿]+/gu,
-        m => `<mark class="ko-highlight">${m}</mark>`
-      );
-      const tags = r.matches.map(m => `<span class="tag">${escapeHtml(m)}</span>`).join('');
+    foundLines.forEach(r => {
+      const tagHtml = Object.entries(r.byScript).map(([script, tokens]) => {
+        const { label, color } = SCRIPTS[script];
+        const tokenTags = tokens.map(t =>
+          `<span class="tag" style="background:${color}44;border:1px solid ${color};">${escapeHtml(t)}</span>`
+        ).join('');
+        return `<div style="margin-bottom:4px;"><span style="font-size:0.75rem;color:#777;margin-right:4px;">${label}</span>${tokenTags}</div>`;
+      }).join('');
+
       html += `
         <tr>
           <td class="line-num">${r.lineNum}</td>
-          <td class="line-content">${highlighted}</td>
-          <td><div class="tag-list">${tags}</div></td>
+          <td class="line-content">${r.highlighted}</td>
+          <td>${tagHtml}</td>
         </tr>`;
     });
 
     html += `</tbody></table>`;
 
-    // 전체 한국어 목록
-    const unique = [...new Set(allKorean)];
-    html += `
-      <div style="margin-top:16px;">
-        <div style="font-size:0.82rem;font-weight:600;color:#555;margin-bottom:8px;">전체 발견 목록</div>
-        <div class="tag-list">${unique.map(w => `<span class="tag">${escapeHtml(w)}</span>`).join('')}</div>
-      </div>`;
+    // Summary
+    html += `<div class="summary-section"><div style="font-size:0.82rem;font-weight:700;color:#555;margin-bottom:12px;">전체 발견 목록</div>`;
+    for (const [script, tokens] of Object.entries(totalByScript)) {
+      const { label, color } = SCRIPTS[script];
+      html += `
+        <div class="summary-group">
+          <div class="summary-script-label">
+            <span class="summary-dot" style="background:${color}"></span>${label}
+          </div>
+          <div class="tag-list">
+            ${[...tokens].map(t => `<span class="tag" style="background:${color}44;border:1px solid ${color};">${escapeHtml(t)}</span>`).join('')}
+          </div>
+        </div>`;
+    }
+    html += `</div>`;
 
     resultBody.innerHTML = html;
     results.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  function processLine(line, allowed) {
+    const chars = [...line];
+    let highlighted = '';
+    const byScript = {};
+    let i = 0;
+
+    while (i < chars.length) {
+      const cp = chars[i].codePointAt(0);
+
+      if (isNeutral(cp)) {
+        highlighted += escapeHtml(chars[i]);
+        i++;
+        continue;
+      }
+
+      const script = getScript(cp);
+
+      if (!script || allowed.has(script)) {
+        highlighted += escapeHtml(chars[i]);
+        i++;
+        continue;
+      }
+
+      // Collect consecutive chars of same foreign script
+      let token = chars[i];
+      i++;
+      while (i < chars.length) {
+        const ncp = chars[i].codePointAt(0);
+        if (!isNeutral(ncp) && getScript(ncp) === script) {
+          token += chars[i++];
+        } else break;
+      }
+
+      const color = SCRIPTS[script].color;
+      highlighted += `<mark style="background:${color};border-radius:3px;padding:1px 3px;" title="${SCRIPTS[script].label}">${escapeHtml(token)}</mark>`;
+      if (!byScript[script]) byScript[script] = [];
+      byScript[script].push(token);
+    }
+
+    return { highlighted, byScript };
+  }
+
+  // ── Deploy info ────────────────────────────────────────────
   const d = new Date(document.lastModified);
   document.getElementById('deployInfo').textContent =
     '최신 배포: ' + d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
