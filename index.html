@@ -146,7 +146,7 @@
     }
     .result-table tr:last-child td { border-bottom: none; }
     .result-table tr:hover td { background: #f9fafe; }
-    .found-cell-inner { max-height: 120px; overflow-y: auto; }
+    .count-badge { font-size: 0.7rem; color: #888; margin-left: 2px; }
 
     .line-num { font-weight: 700; color: #4f7ef8; white-space: nowrap; }
     .line-content { font-family: 'Consolas', 'Courier New', 'DejaVu Sans Mono', monospace; word-break: break-all; }
@@ -402,9 +402,11 @@
       const { highlighted, byScript } = processLine(line, allowed);
       if (Object.keys(byScript).length > 0) {
         foundLines.push({ lineNum: idx + 1, highlighted, byScript });
-        for (const [script, tokens] of Object.entries(byScript)) {
-          if (!totalByScript[script]) totalByScript[script] = new Set();
-          tokens.forEach(t => totalByScript[script].add(t));
+        for (const [script, countMap] of Object.entries(byScript)) {
+          if (!totalByScript[script]) totalByScript[script] = new Map();
+          countMap.forEach((cnt, t) =>
+            totalByScript[script].set(t, (totalByScript[script].get(t) || 0) + cnt)
+          );
         }
       }
     });
@@ -437,12 +439,12 @@
         </thead><tbody>`;
 
     foundLines.forEach(r => {
-      const tagHtml = Object.entries(r.byScript).map(([script, tokens]) => {
+      const tagHtml = Object.entries(r.byScript).map(([script, countMap]) => {
         const { label, color } = SCRIPTS[script];
-        const tokenTags = tokens.map(t =>
-          `<span class="tag" style="background:${color}44;border:1px solid ${color};">${escapeHtml(t)}</span>`
+        const tokenTags = [...countMap.entries()].map(([t, cnt]) =>
+          `<span class="tag" style="background:${color}44;border:1px solid ${color};">${escapeHtml(t)}${cnt > 1 ? `<span class="count-badge">×${cnt}</span>` : ''}</span>`
         ).join('');
-        return `<div style="margin-bottom:4px;"><span style="font-size:0.75rem;color:#777;margin-right:4px;">${label}</span>${tokenTags}</div>`;
+        return `<div style="margin-bottom:4px;"><span style="font-size:0.75rem;color:#777;margin-right:4px;">${label}</span><div class="tag-list" style="margin-top:3px;">${tokenTags}</div></div>`;
       }).join('');
 
       html += `
@@ -465,7 +467,7 @@
             <span class="summary-dot" style="background:${color}"></span>${label}
           </div>
           <div class="tag-list">
-            ${[...tokens].map(t => `<span class="tag" style="background:${color}44;border:1px solid ${color};">${escapeHtml(t)}</span>`).join('')}
+            ${[...tokens.entries()].map(([t, cnt]) => `<span class="tag" style="background:${color}44;border:1px solid ${color};">${escapeHtml(t)}${cnt > 1 ? `<span class="count-badge">×${cnt}</span>` : ''}</span>`).join('')}
           </div>
         </div>`;
     }
@@ -510,8 +512,8 @@
 
       const color = SCRIPTS[script].color;
       highlighted += `<mark style="background:${color};border-radius:3px;padding:1px 3px;" title="${SCRIPTS[script].label}">${escapeHtml(token)}</mark>`;
-      if (!byScript[script]) byScript[script] = [];
-      byScript[script].push(token);
+      if (!byScript[script]) byScript[script] = new Map();
+      byScript[script].set(token, (byScript[script].get(token) || 0) + 1);
     }
 
     return { highlighted, byScript };
