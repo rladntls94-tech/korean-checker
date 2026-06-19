@@ -160,7 +160,8 @@
     .tag-clickable:hover { filter: brightness(0.85); }
 
     .line-num { font-weight: 700; color: #4f7ef8; white-space: nowrap; }
-    .line-content { font-family: 'Consolas', 'Courier New', 'DejaVu Sans Mono', monospace; word-break: break-all; }
+    .line-content { font-family: 'Consolas', 'Courier New', 'DejaVu Sans Mono', monospace; word-break: break-all; line-height: 2.2; }
+    .html-notice { font-size: 0.78rem; color: #4f7ef8; margin-bottom: 12px; }
 
     .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
     .tag { border-radius: 5px; padding: 3px 10px; font-size: 0.82rem; }
@@ -402,8 +403,40 @@
     results.style.display = 'none';
   });
 
+  // ── HTML strip ─────────────────────────────────────────────
+  function maybeStripHtml(text) {
+    if (!/<[a-z!][^>]*>/i.test(text)) return { text, isHtml: false };
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'text/html');
+      doc.querySelectorAll('script, style').forEach(el => el.remove());
+      return { text: extractNodeText(doc.body || doc.documentElement), isHtml: true };
+    } catch {
+      return { text, isHtml: false };
+    }
+  }
+
+  function extractNodeText(node) {
+    if (!node) return '';
+    const BLOCK = new Set(['div','p','h1','h2','h3','h4','h5','h6','li','tr','td','section','article','header','footer','blockquote','dd','dt']);
+    let out = '';
+    for (const child of node.childNodes) {
+      if (child.nodeType === 3) {
+        out += child.textContent;
+      } else if (child.nodeType === 1) {
+        const tag = child.tagName.toLowerCase();
+        if (tag === 'script' || tag === 'style') continue;
+        if (tag === 'br') { out += '\n'; continue; }
+        out += extractNodeText(child);
+        if (BLOCK.has(tag)) out += '\n';
+      }
+    }
+    return out;
+  }
+
   // ── Analysis ───────────────────────────────────────────────
-  function analyse(text) {
+  function analyse(rawText) {
+    const { text, isHtml } = maybeStripHtml(rawText);
     const allowed = getEffectiveAllowed();
     const lines = text.split('\n');
     const foundLines = [];
@@ -423,6 +456,16 @@
     });
 
     results.style.display = 'block';
+
+    const htmlNotice = document.getElementById('htmlNotice');
+    if (htmlNotice) htmlNotice.remove();
+    if (isHtml) {
+      const notice = document.createElement('p');
+      notice.id = 'htmlNotice';
+      notice.className = 'html-notice';
+      notice.textContent = '※ HTML 소스가 감지되어 태그를 제거하고 텍스트만 검사했습니다.';
+      resultBody.parentElement.insertBefore(notice, resultBody);
+    }
 
     const newBadge = document.createElement('span');
     newBadge.id = 'badge';
