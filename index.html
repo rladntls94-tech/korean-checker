@@ -148,6 +148,17 @@
     .result-table tr:hover td { background: #f9fafe; }
     .count-badge { font-size: 0.7rem; color: #888; margin-left: 2px; }
 
+    @keyframes tokenFlash {
+      0%   { box-shadow: none; }
+      25%  { box-shadow: 0 0 0 3px #e63946, 0 0 12px rgba(230,57,70,0.7); }
+      65%  { box-shadow: 0 0 0 3px #e63946, 0 0 12px rgba(230,57,70,0.7); }
+      100% { box-shadow: none; }
+    }
+    .token-flash { animation: tokenFlash 1s ease; position: relative; z-index: 1; }
+    .token-dim   { opacity: 0.2; transition: opacity 0.15s; }
+    .tag-clickable { cursor: pointer; }
+    .tag-clickable:hover { filter: brightness(0.85); }
+
     .line-num { font-weight: 700; color: #4f7ef8; white-space: nowrap; }
     .line-content { font-family: 'Consolas', 'Courier New', 'DejaVu Sans Mono', monospace; word-break: break-all; }
 
@@ -442,7 +453,7 @@
       const tagHtml = Object.entries(r.byScript).map(([script, countMap]) => {
         const { label, color } = SCRIPTS[script];
         const tokenTags = [...countMap.entries()].map(([t, cnt]) =>
-          `<span class="tag" style="background:${color}44;border:1px solid ${color};">${escapeHtml(t)}${cnt > 1 ? `<span class="count-badge">×${cnt}</span>` : ''}</span>`
+          `<span class="tag tag-clickable" data-script="${script}" data-token="${escapeHtml(t)}" style="background:${color}44;border:1px solid ${color};">${escapeHtml(t)}${cnt > 1 ? `<span class="count-badge">×${cnt}</span>` : ''}</span>`
         ).join('');
         return `<div style="margin-bottom:4px;"><span style="font-size:0.75rem;color:#777;margin-right:4px;">${label}</span><div class="tag-list" style="margin-top:3px;">${tokenTags}</div></div>`;
       }).join('');
@@ -467,7 +478,7 @@
             <span class="summary-dot" style="background:${color}"></span>${label}
           </div>
           <div class="tag-list">
-            ${[...tokens.entries()].map(([t, cnt]) => `<span class="tag" style="background:${color}44;border:1px solid ${color};">${escapeHtml(t)}${cnt > 1 ? `<span class="count-badge">×${cnt}</span>` : ''}</span>`).join('')}
+            ${[...tokens.entries()].map(([t, cnt]) => `<span class="tag tag-clickable" data-script="${script}" data-token="${escapeHtml(t)}" style="background:${color}44;border:1px solid ${color};">${escapeHtml(t)}${cnt > 1 ? `<span class="count-badge">×${cnt}</span>` : ''}</span>`).join('')}
           </div>
         </div>`;
     }
@@ -511,12 +522,38 @@
       }
 
       const color = SCRIPTS[script].color;
-      highlighted += `<mark style="background:${color};border-radius:3px;padding:1px 3px;" title="${SCRIPTS[script].label}">${escapeHtml(token)}</mark>`;
+      highlighted += `<mark data-script="${script}" data-token="${escapeHtml(token)}" style="background:${color};border-radius:3px;padding:1px 3px;" title="${SCRIPTS[script].label}">${escapeHtml(token)}</mark>`;
       if (!byScript[script]) byScript[script] = new Map();
       byScript[script].set(token, (byScript[script].get(token) || 0) + 1);
     }
 
     return { highlighted, byScript };
+  }
+
+  // ── Flash on tag click ─────────────────────────────────────
+  resultBody.addEventListener('click', e => {
+    const tag = e.target.closest('.tag-clickable');
+    if (!tag) return;
+    flashMarks(tag.dataset.script, tag.dataset.token);
+  });
+
+  function flashMarks(script, token) {
+    const allMarks = [...resultBody.querySelectorAll('mark[data-script]')];
+    const matches = allMarks.filter(m => m.dataset.script === script && m.dataset.token === token);
+    const others  = allMarks.filter(m => !(m.dataset.script === script && m.dataset.token === token));
+
+    allMarks.forEach(m => m.classList.remove('token-flash', 'token-dim'));
+
+    requestAnimationFrame(() => {
+      matches.forEach(m => m.classList.add('token-flash'));
+      others.forEach(m => m.classList.add('token-dim'));
+    });
+
+    if (matches.length) matches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    setTimeout(() => {
+      allMarks.forEach(m => m.classList.remove('token-flash', 'token-dim'));
+    }, 1200);
   }
 
   // ── Deploy info ────────────────────────────────────────────
