@@ -18,6 +18,7 @@
       --community:#795548;
       --privacy:#607D8B;
       --heidel:#00695C;
+      --coupon:#3949AB;
     }
 
     body {
@@ -439,6 +440,7 @@
     community: { label: '커뮤니티', color: 'var(--community)' },
     privacy:   { label: '개인정보', color: 'var(--privacy)' },
     heidel:    { label: '하이델',   color: 'var(--heidel)' },
+    coupon:    { label: '7일쿠폰', color: 'var(--coupon)' },
   };
 
   const PEARL_NOTICE = boardNo => `https://blackdesert.pearlabyss.com/Console/ko-KR/News/Notice/Detail?_boardNo=${boardNo}`;
@@ -461,9 +463,13 @@
       detail: '하이델 이벤트 응모판 UI "자세히 보기" 버튼에 연결할 라이브 이벤트 페이지 URL 생성 후 전달 필요. 응모판 이벤트 안내 시 사전에 파둔 링크 슬롯에 실제 URL을 등록해야 함 (Slack 요청 기준).' },
     { date: '2026-07-10', category: 'guild',     title: '2차 길드박람회 개최', url: PEARL_NOTICE(13306),
       detail: '2차 길드 박람회 개최 (ASIA·EU 19:00 / NA 16:00)' },
+    { date: '2026-07-10', category: 'coupon',    title: '7일 쿠폰 이벤트 시작', url: 'https://pearlabyss-op.slack.com/archives/GSWL776PK/p1782874612449659?thread_ts=1782785046.820829&cid=GSWL776PK',
+      detail: '테르미안/연회 티징 ~ 사막의 빛 달성 이벤트 사이 공백 주간 접속 유도용 7일 쿠폰. 콘솔은 쿠폰 보상을 당일에만 수령 가능한 도전과제로 세팅 (쿠폰별 수령 가능 시간: 당일 00:00~23:59 UTC).' },
     { date: '2026-07-15', category: 'anniv',     title: '사막의빛 목표달성기한(23:59 UTC)', url: PEARL_NOTICE(13352),
       detail: '"사막의 빛" 전 세계 목표(8천만 개) 달성 기한(23:59 UTC) — 달성률에 따라 보상 단계 결정' },
     { date: '2026-07-16', category: 'pass',      title: '사냥패스 판매종료(07:00 UTC)', url: PEARL_NOTICE(13353) },
+    { date: '2026-07-17', category: 'coupon',    title: '7일 쿠폰 이벤트 종료(23:59 UTC)', url: 'https://pearlabyss-op.slack.com/archives/GSWL776PK/p1782874612449659?thread_ts=1782785046.820829&cid=GSWL776PK',
+      detail: '7일 쿠폰 이벤트 기간 종료 (2026-07-10 00:00 ~ 07-17 23:59). 마지막 날 쿠폰도 당일 00:00~23:59 UTC 내에만 수령 가능.' },
     { date: '2026-07-22', category: 'anniv',     title: '4주년 접속보상 종료', url: PEARL_NOTICE(13303) },
     { date: '2026-07-23', category: 'node',      title: '거점전 지원 종료', url: PEARL_NOTICE(13355) },
     { date: '2026-07-23', category: 'pass',      title: '사냥패스 보상수령종료', url: PEARL_NOTICE(13353) },
