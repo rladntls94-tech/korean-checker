@@ -314,6 +314,24 @@
     .done-checkbox { width: 15px; height: 15px; cursor: pointer; }
     .row-done td:not(.done-cell) { text-decoration: line-through; opacity: 0.5; }
     .sched-badge-done { text-decoration: line-through; opacity: 0.5; }
+
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #666;
+    }
+    .task-item:last-child { margin-bottom: 0; }
+    .task-item input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      margin-top: 1px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .task-item.task-done { text-decoration: line-through; opacity: 0.5; }
   </style>
 </head>
 <body>
@@ -399,10 +417,7 @@
 
     <div class="card">
       <h2>챙겨야 할 업무</h2>
-      <p class="sched-note" style="margin-top:0;">* 하이델 이벤트 응모판 "자세히 보기" 버튼용 라이브 이벤트 페이지 URL 생성 및 전달 필요 (~7/9)</p>
-      <p class="sched-note">* 응모판 이벤트 실제 안내 시점에 맞춰, 위에서 미리 파둔 링크 슬롯에 실제 URL 등록 필요</p>
-      <p class="sched-note">* 7일 쿠폰 이벤트(7/10~7/17) 콘솔 도전과제 세팅 — 쿠폰 보상을 당일(00:00~23:59 UTC) 내에만 수령 가능하도록 구성 필요</p>
-      <p class="sched-note">* 개인정보처리방침 개정(7/1 안내 → 7/8 갱신) 관련 DM 발송 여부 확인 — 한국은 약관/운영정책 개정이 동반될 경우에만 발송, 대만은 별도 발송 필요</p>
+      <div id="taskList"></div>
     </div>
 
     <!-- DETAIL LIST -->
@@ -468,6 +483,35 @@
   function escapeAttr(str) { return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
 
   let doneSet = loadDoneSet();
+
+  // ── 챙겨야 할 업무 (개인 액션 아이템, 체크박스로 완료 표시) ──
+  const TASKS = [
+    { id: 'heidel-url', text: '하이델 이벤트 응모판 "자세히 보기" 버튼용 라이브 이벤트 페이지 URL 생성 및 전달 필요 (~7/9)' },
+    { id: 'heidel-register', text: '응모판 이벤트 실제 안내 시점에 맞춰, 위에서 미리 파둔 링크 슬롯에 실제 URL 등록 필요' },
+    { id: 'coupon-setup', text: '7일 쿠폰 이벤트(7/10~7/17) 콘솔 도전과제 세팅 — 쿠폰 보상을 당일(00:00~23:59 UTC) 내에만 수령 가능하도록 구성 필요' },
+    { id: 'privacy-dm-check', text: '개인정보처리방침 개정(7/1 안내 → 7/8 갱신) 관련 DM 발송 여부 확인 — 한국은 약관/운영정책 개정이 동반될 경우에만 발송, 대만은 별도 발송 필요' },
+  ];
+
+  function renderTaskList() {
+    const container = document.getElementById('taskList');
+    container.innerHTML = TASKS.map(t => {
+      const key = `task__${t.id}`;
+      const isDone = doneSet.has(key);
+      return `<label class="task-item${isDone ? ' task-done' : ''}">
+        <input type="checkbox" class="task-checkbox" data-key="${escapeAttr(key)}" ${isDone ? 'checked' : ''}>
+        <span>${t.text}</span>
+      </label>`;
+    }).join('');
+  }
+
+  document.getElementById('taskList').addEventListener('change', e => {
+    const checkbox = e.target.closest('.task-checkbox');
+    if (!checkbox) return;
+    const key = checkbox.dataset.key;
+    if (checkbox.checked) doneSet.add(key); else doneSet.delete(key);
+    saveDoneSet(doneSet);
+    renderTaskList();
+  });
 
   const PEARL_NOTICE = boardNo => `https://blackdesert.pearlabyss.com/Console/ko-KR/News/Notice/Detail?_boardNo=${boardNo}`;
   const PRIVACY_SLACK_THREAD = 'https://pearlabyss-op.slack.com/archives/GALFJM3DJ/p1782881689413629?thread_ts=1782753159.496199&cid=GALFJM3DJ';
@@ -631,6 +675,7 @@
 
   renderScheduleCalendars();
   renderScheduleDetailTable();
+  renderTaskList();
   highlightToday();
 
   // ── Script definitions ─────────────────────────────────────
