@@ -17,6 +17,7 @@
       --guild:#00BCD4;
       --community:#795548;
       --privacy:#607D8B;
+      --heidel:#00695C;
     }
 
     body {
@@ -437,6 +438,7 @@
     guild:     { label: '길드',     color: 'var(--guild)' },
     community: { label: '커뮤니티', color: 'var(--community)' },
     privacy:   { label: '개인정보', color: 'var(--privacy)' },
+    heidel:    { label: '하이델',   color: 'var(--heidel)' },
   };
 
   const PEARL_NOTICE = boardNo => `https://blackdesert.pearlabyss.com/Console/ko-KR/News/Notice/Detail?_boardNo=${boardNo}`;
@@ -455,6 +457,8 @@
     { date: '2026-07-09', category: 'solare',    title: '솔라레 패스 보상수령종료', url: PEARL_NOTICE(13299) },
     { date: '2026-07-09', category: 'solare',    title: '솔라레 시즌 종료', url: PEARL_NOTICE(13204),
       detail: '솔라레의 창 랭크전 시즌(5/14~) 종료' },
+    { date: '2026-07-09', category: 'heidel',    title: '하이델 이벤트 응모판 링크 등록', url: PEARL_NOTICE(13383),
+      detail: '하이델 이벤트 응모판 UI "자세히 보기" 버튼에 연결할 라이브 이벤트 페이지 URL 생성 후 전달 필요. 응모판 이벤트 안내 시 사전에 파둔 링크 슬롯에 실제 URL을 등록해야 함 (Slack 요청 기준).' },
     { date: '2026-07-10', category: 'guild',     title: '2차 길드박람회 개최', url: PEARL_NOTICE(13306),
       detail: '2차 길드 박람회 개최 (ASIA·EU 19:00 / NA 16:00)' },
     { date: '2026-07-15', category: 'anniv',     title: '사막의빛 목표달성기한(23:59 UTC)', url: PEARL_NOTICE(13352),
