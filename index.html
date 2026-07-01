@@ -345,6 +345,28 @@
       flex-shrink: 0;
     }
     .task-item.task-done { text-decoration: line-through; opacity: 0.5; }
+
+    .sched-pager {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .sched-pager-btn {
+      padding: 6px 14px;
+      border: 1.5px solid #dde1ea;
+      border-radius: 7px;
+      background: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #4f7ef8;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .sched-pager-btn:hover:not(:disabled) { background: #f0f4ff; }
+    .sched-pager-btn:disabled { color: #bbb; border-color: #eee; cursor: default; }
+    .sched-page-label { font-size: 0.95rem; font-weight: 700; color: #444; min-width: 120px; text-align: center; }
   </style>
 </head>
 <body>
@@ -422,7 +444,12 @@
       <p class="subtitle" style="margin-bottom:0;">공지 게시일 기준 6월 11일 ~ 6월 25일 사이 발표된 이벤트 마감/시작일 정리</p>
     </div>
 
-    <!-- 캘린더 카드는 JS의 MONTHS 배열에서 자동 생성됩니다 (아래 스크립트 참고) -->
+    <!-- 캘린더 카드는 JS의 MONTHS 배열에서 자동 생성되며, 2개월씩 페이지로 넘겨봅니다 -->
+    <div class="sched-pager">
+      <button id="schedPrev" class="sched-pager-btn">◀ 이전</button>
+      <span id="schedPageLabel" class="sched-page-label"></span>
+      <button id="schedNext" class="sched-pager-btn">다음 ▶</button>
+    </div>
     <div id="scheduleCalendars"></div>
     <div class="card">
       <p class="sched-note" style="margin-top:0;">* 사막의빛 보너스 이벤트(7/23~8/6)는 전 세계 목표(8천만 개)를 7/15까지 100% 달성했을 경우에만 진행됩니다.</p>
@@ -583,16 +610,31 @@
   const MONTHS = [
     { year: 2026, month: 7 },
     { year: 2026, month: 8 },
+    { year: 2026, month: 9 },
+    { year: 2026, month: 10 },
+    { year: 2026, month: 11 },
+    { year: 2026, month: 12 },
   ];
+  const MONTHS_PER_PAGE = 2;
+  let currentPage = 0;
 
   function monthContainerId(year, month) {
     return `cal-${year}-${String(month).padStart(2, '0')}`;
   }
 
-  // ── Month card generator (연/월 목록만으로 카드 HTML까지 생성) ──
+  function getSchedulePages() {
+    const pages = [];
+    for (let i = 0; i < MONTHS.length; i += MONTHS_PER_PAGE) pages.push(MONTHS.slice(i, i + MONTHS_PER_PAGE));
+    return pages;
+  }
+
+  // ── Month card generator (현재 페이지에 해당하는 달만 카드 HTML로 생성) ──
   function renderScheduleCalendars() {
+    const pages = getSchedulePages();
+    const page = pages[currentPage];
     const container = document.getElementById('scheduleCalendars');
-    container.innerHTML = MONTHS.map(({ year, month }) => `
+
+    container.innerHTML = page.map(({ year, month }) => `
       <div class="card sched-month">
         <h2>${year}년 ${month}월</h2>
         <table class="sched-table" id="${monthContainerId(year, month)}">
@@ -605,8 +647,26 @@
         </table>
       </div>`).join('');
 
-    MONTHS.forEach(({ year, month }) => renderCalendarMonth(monthContainerId(year, month), year, month));
+    page.forEach(({ year, month }) => renderCalendarMonth(monthContainerId(year, month), year, month));
+
+    document.getElementById('schedPageLabel').textContent =
+      `${page[0].year}년 ${page.map(({ month }) => `${month}월`).join(' - ')}`;
+    document.getElementById('schedPrev').disabled = currentPage === 0;
+    document.getElementById('schedNext').disabled = currentPage === pages.length - 1;
   }
+
+  document.getElementById('schedPrev').addEventListener('click', () => {
+    if (currentPage === 0) return;
+    currentPage--;
+    renderScheduleCalendars();
+    highlightToday();
+  });
+  document.getElementById('schedNext').addEventListener('click', () => {
+    if (currentPage === getSchedulePages().length - 1) return;
+    currentPage++;
+    renderScheduleCalendars();
+    highlightToday();
+  });
 
   // ── Calendar grid renderer (계산만으로 달력 생성, 날짜 셀 하드코딩 없음) ──
   function renderCalendarMonth(containerId, year, month) {
