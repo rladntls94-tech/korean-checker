@@ -534,6 +534,7 @@
     { id: 'heidel-register', text: '응모판 이벤트 실제 안내 시점에 맞춰, 위에서 미리 파둔 링크 슬롯에 실제 URL 등록 필요' },
     { id: 'coupon-setup', text: '7일 쿠폰 이벤트(7/10~7/17) 콘솔 도전과제 세팅 — 쿠폰 보상을 당일(00:00~23:59 UTC) 내에만 수령 가능하도록 구성 필요' },
     { id: 'privacy-dm-check', text: '개인정보처리방침 개정(7/1 안내 → 7/8 갱신) 관련 DM 발송 여부 확인 — 한국은 약관/운영정책 개정이 동반될 경우에만 발송, 대만은 별도 발송 필요' },
+    { id: 'academy-notice', text: '올비아 아카데미 2기 졸업 일정 변경(입학종료 7/16→7/23, 졸업 7/23→8/6) 사전 안내 공지 게시 (목표 ~7/9)' },
   ];
 
   function renderTaskList() {
@@ -582,8 +583,8 @@
     { date: '2026-07-15', category: 'anniv',     title: '사막의빛 목표달성기한(23:59 UTC)', url: PEARL_NOTICE(13352),
       detail: '"사막의 빛" 전 세계 목표(8천만 개) 달성 기한(23:59 UTC) — 달성률에 따라 보상 단계 결정' },
     { date: '2026-07-16', category: 'pass',      title: '사냥패스 판매종료(07:00 UTC)', url: PEARL_NOTICE(13353) },
-    { date: '2026-07-16', category: 'academy',   title: '올비아 아카데미 2기 개교기간 종료(07:00 UTC)', url: PEARL_NOTICE(13128),
-      detail: '올비아 아카데미 2기 개교 기간(4/30~7/16 07:00 UTC) 종료' },
+    { date: '2026-07-09', category: 'academy',   title: '아카데미 2기 졸업일정 변경 사전 안내(공지 목표)',
+      detail: '올비아 아카데미 2기 졸업 일정 변경 사전 안내 공지 목표일. 입학 종료 7/16→7/23(점검 전), 졸업 7/23→8/6으로 변경.' },
     { date: '2026-07-17', category: 'coupon',    title: '7일 쿠폰 이벤트 종료(23:59 UTC)', url: 'https://pearlabyss-op.slack.com/archives/GSWL776PK/p1782874612449659?thread_ts=1782785046.820829&cid=GSWL776PK',
       detail: '7일 쿠폰 이벤트 기간 종료 (2026-07-10 00:00 ~ 07-17 23:59). 마지막 날 쿠폰도 당일 00:00~23:59 UTC 내에만 수령 가능.' },
     { date: '2026-07-22', category: 'anniv',     title: '4주년 접속보상 종료', url: PEARL_NOTICE(13303) },
@@ -593,8 +594,10 @@
       detail: '"사막의 빛" 이벤트 종료 → (목표 100% 달성 시) 보너스 이벤트 8/6까지 시작' },
     { date: '2026-07-23', category: 'guild',     title: '길드가입 칭호 삭제', url: PEARL_NOTICE(13302),
       detail: '도전과제 칭호 "[칭호] 길드를 찾습니다" 삭제 예정' },
-    { date: '2026-07-23', category: 'academy',   title: '올비아 아카데미 2기 의뢰 수주 종료', url: PEARL_NOTICE(13128),
-      detail: '올비아 아카데미 2기 의뢰 수주 기간(4/30~7/23) 종료' },
+    { date: '2026-07-23', category: 'academy',   title: '올비아 아카데미 2기 입학 종료(점검 전)', url: PEARL_NOTICE(13128),
+      detail: '올비아 아카데미 2기 입학 종료 (변경: 기존 7/16 → 7/23 점검 전)' },
+    { date: '2026-08-06', category: 'academy',   title: '올비아 아카데미 2기 졸업', url: PEARL_NOTICE(13128),
+      detail: '올비아 아카데미 2기 졸업 (변경: 기존 7/23 → 8/6)' },
     { date: '2026-07-31', category: 'anniv',     title: '일일접속보상 종료(23:59 UTC)', url: PEARL_NOTICE(13356) },
     { date: '2026-08-06', category: 'anniv',     title: '사막의빛 보너스이벤트 종료 (조건부*)', url: PEARL_NOTICE(13352) },
     { date: '2026-08-06', category: 'academy',   title: '올비아 아카데미 3기 진행 시작',
