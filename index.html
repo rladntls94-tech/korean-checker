@@ -302,13 +302,18 @@
     .detail-table { table-layout: auto; }
     .detail-table th:nth-child(1), .detail-table td:nth-child(1),
     .detail-table th:nth-child(2), .detail-table td:nth-child(2),
-    .detail-table th:nth-child(4), .detail-table td:nth-child(4) {
+    .detail-table th:nth-child(3), .detail-table td:nth-child(3),
+    .detail-table th:nth-child(5), .detail-table td:nth-child(5) {
       white-space: nowrap;
       width: 1%;
     }
-    .detail-table th:nth-child(3), .detail-table td:nth-child(3) {
+    .detail-table th:nth-child(4), .detail-table td:nth-child(4) {
       width: auto;
     }
+    .done-cell { text-align: center; }
+    .done-checkbox { width: 15px; height: 15px; cursor: pointer; }
+    .row-done td:not(.done-cell) { text-decoration: line-through; opacity: 0.5; }
+    .sched-badge-done { text-decoration: line-through; opacity: 0.5; }
   </style>
 </head>
 <body>
@@ -397,7 +402,7 @@
       <h2>상세 목록 (날짜순)</h2>
       <table class="result-table detail-table">
         <thead>
-          <tr><th>날짜</th><th>구분</th><th>내용</th><th>보드No</th></tr>
+          <tr><th></th><th>날짜</th><th>구분</th><th>내용</th><th>보드No</th></tr>
         </thead>
         <tbody id="scheduleDetailBody"></tbody>
       </table>
@@ -442,6 +447,19 @@
     heidel:    { label: '하이델',   color: 'var(--heidel)' },
     coupon:    { label: '7일쿠폰', color: 'var(--coupon)' },
   };
+
+  // ── Done-state (체크한 항목은 브라우저에 저장되어 새로고침해도 유지됨) ──
+  const DONE_STORAGE_KEY = 'bdo-console-schedule-done';
+
+  function loadDoneSet() {
+    try { return new Set(JSON.parse(localStorage.getItem(DONE_STORAGE_KEY) || '[]')); }
+    catch { return new Set(); }
+  }
+  function saveDoneSet(set) { localStorage.setItem(DONE_STORAGE_KEY, JSON.stringify([...set])); }
+  function eventKey(e) { return `${e.date}__${e.title}`; }
+  function escapeAttr(str) { return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
+
+  let doneSet = loadDoneSet();
 
   const PEARL_NOTICE = boardNo => `https://blackdesert.pearlabyss.com/Console/ko-KR/News/Notice/Detail?_boardNo=${boardNo}`;
   const PRIVACY_SLACK_THREAD = 'https://pearlabyss-op.slack.com/archives/GALFJM3DJ/p1782881689413629?thread_ts=1782753159.496199&cid=GALFJM3DJ';
@@ -528,9 +546,10 @@
       const numClass = weekday === 0 ? ' sched-sun-num' : weekday === 6 ? ' sched-sat-num' : '';
       const badges = EVENTS.filter(e => e.date === dateStr).map(e => {
         const meta = CATEGORY_META[e.category];
+        const doneClass = doneSet.has(eventKey(e)) ? ' sched-badge-done' : '';
         return e.url
-          ? `<a class="sched-badge" style="background:${meta.color}" href="${e.url}" target="_blank" rel="noopener">${e.title}</a>`
-          : `<span class="sched-badge sched-badge-plain" style="background:${meta.color}">${e.title}</span>`;
+          ? `<a class="sched-badge${doneClass}" style="background:${meta.color}" href="${e.url}" target="_blank" rel="noopener">${e.title}</a>`
+          : `<span class="sched-badge sched-badge-plain${doneClass}" style="background:${meta.color}">${e.title}</span>`;
       }).join('');
       html += `<td data-date="${dateStr}"><span class="sched-daynum${numClass}">${day}</span>${badges}</td>`;
       if (weekday === 6 && day !== totalDays) html += '</tr><tr>';
@@ -562,28 +581,49 @@
     const sorted = [...EVENTS].sort((a, b) => a.date.localeCompare(b.date));
     tbody.innerHTML = sorted.map(e => {
       const meta = CATEGORY_META[e.category];
+      const key = eventKey(e);
+      const isDone = doneSet.has(key);
       const link = e.url
         ? `<a class="board-link" href="${e.url}" target="_blank" rel="noopener">${linkLabel(e.url)}</a>`
         : '-';
-      return `<tr><td>${formatDateLabel(e.date)}</td><td><span class="tag" style="background:${meta.color};color:#fff;">${meta.label}</span></td><td>${e.detail || e.title}</td><td>${link}</td></tr>`;
+      return `<tr class="${isDone ? 'row-done' : ''}">
+        <td class="done-cell"><input type="checkbox" class="done-checkbox" data-key="${escapeAttr(key)}" ${isDone ? 'checked' : ''}></td>
+        <td>${formatDateLabel(e.date)}</td>
+        <td><span class="tag" style="background:${meta.color};color:#fff;">${meta.label}</span></td>
+        <td>${e.detail || e.title}</td>
+        <td>${link}</td>
+      </tr>`;
     }).join('');
   }
 
-  renderScheduleCalendars();
-  renderScheduleDetailTable();
+  // 체크박스를 토글하면 done 상태를 저장하고 캘린더/표를 다시 그림
+  document.getElementById('scheduleDetailBody').addEventListener('change', e => {
+    const checkbox = e.target.closest('.done-checkbox');
+    if (!checkbox) return;
+    const key = checkbox.dataset.key;
+    if (checkbox.checked) doneSet.add(key); else doneSet.delete(key);
+    saveDoneSet(doneSet);
+    renderScheduleCalendars();
+    renderScheduleDetailTable();
+    highlightToday();
+  });
 
   // ── Highlight today's date in the schedule calendar ─────────
-  (function highlightToday() {
+  function highlightToday() {
     const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
     const cell = document.querySelector(`#tab-schedule td[data-date="${todayStr}"]`);
-    if (cell) {
+    if (cell && !cell.classList.contains('sched-today')) {
       cell.classList.add('sched-today');
       const tag = document.createElement('span');
       tag.className = 'sched-today-tag';
       tag.textContent = '오늘';
       cell.appendChild(tag);
     }
-  })();
+  }
+
+  renderScheduleCalendars();
+  renderScheduleDetailTable();
+  highlightToday();
 
   // ── Script definitions ─────────────────────────────────────
   const SCRIPTS = {
