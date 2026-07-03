@@ -318,6 +318,7 @@
       border-radius: 8px;
       font-weight: 700;
       z-index: 1;
+      pointer-events: none;
     }
     .sched-month h2 {
       font-size: 15px;
@@ -903,10 +904,11 @@
       const numClass = weekday === 0 ? ' sched-sun-num' : weekday === 6 ? ' sched-sat-num' : '';
       const badges = allEvents().filter(e => e.date === dateStr).map(e => {
         const meta = CATEGORY_META[e.category];
-        const doneClass = doneSet.has(eventKey(e)) ? ' sched-badge-done' : '';
+        const key = eventKey(e);
+        const doneClass = doneSet.has(key) ? ' sched-badge-done' : '';
         return e.url
-          ? `<a class="sched-badge${doneClass}" style="background:${meta.color}" href="${e.url}" target="_blank" rel="noopener">${e.title}</a>`
-          : `<span class="sched-badge sched-badge-plain${doneClass}" style="background:${meta.color}">${e.title}</span>`;
+          ? `<a class="sched-badge${doneClass}" style="background:${meta.color}" href="${e.url}" target="_blank" rel="noopener" data-event-key="${escapeAttr(key)}">${e.title}</a>`
+          : `<span class="sched-badge sched-badge-plain${doneClass}" style="background:${meta.color}" data-event-key="${escapeAttr(key)}">${e.title}</span>`;
       }).join('');
       const maintTag = MAINTENANCE_DATES.has(dateStr) ? '<span class="sched-maint-tag" title="정기점검">점검</span>' : '';
       html += `<td data-date="${dateStr}"><div class="sched-daynum-row"><span class="sched-daynum${numClass}">${day}</span><button type="button" class="sched-add-btn" data-date="${dateStr}" title="이 날짜에 기록 추가">+</button></div>${maintTag}${badges}</td>`;
@@ -962,18 +964,7 @@
   document.getElementById('scheduleDetailBody').addEventListener('click', e => {
     const editBtn = e.target.closest('.event-edit-btn');
     if (editBtn) {
-      const key = editBtn.dataset.eventKey;
-      const target = allEvents().find(ev => eventKey(ev) === key);
-      if (!target) return;
-      document.getElementById('newEventDate').value = target.date;
-      newEventCategorySelect.value = target.category;
-      document.getElementById('newEventTitle').value = target.title;
-      document.getElementById('newEventDetail').value = target.detail || '';
-      document.getElementById('newEventUrl').value = target.url || '';
-      editingEventKey = key;
-      document.getElementById('addEventBtn').textContent = '저장';
-      document.getElementById('cancelEventEditBtn').style.display = '';
-      document.getElementById('newEventTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      openEventEditForm(editBtn.dataset.eventKey);
       return;
     }
     const btn = e.target.closest('.custom-delete-btn');
@@ -1024,12 +1015,48 @@
     highlightToday();
   });
 
+  // ── 달력에서 우클릭으로 수정 (배지 위에서 우클릭 → 상세 목록의 수정폼 열기) ──
+  document.getElementById('scheduleCalendars').addEventListener('contextmenu', e => {
+    const td = e.target.closest('td[data-date]');
+    if (!td) return;
+    e.preventDefault();
+
+    const badge = e.target.closest('.sched-badge');
+    if (badge) {
+      openEventEditForm(badge.dataset.eventKey);
+      return;
+    }
+
+    const date = td.dataset.date;
+    const text = prompt(`${date} 기록 추가:`);
+    if (!text || !text.trim()) return;
+    customEvents.push({ id: makeCustomId(), date, category: 'custom', title: text.trim(), custom: true });
+    saveCustomEvents(customEvents);
+    renderScheduleCalendars();
+    renderScheduleDetailTable();
+    highlightToday();
+  });
+
   // ── 새 일정 추가 / 기존 일정 수정 폼 (같은 폼을 재사용) ──────────
   const newEventCategorySelect = document.getElementById('newEventCategory');
   newEventCategorySelect.innerHTML = Object.entries(CATEGORY_META)
     .map(([key, meta]) => `<option value="${key}">${meta.label}</option>`).join('');
 
   let editingEventKey = null;
+
+  function openEventEditForm(key) {
+    const target = allEvents().find(ev => eventKey(ev) === key);
+    if (!target) return;
+    document.getElementById('newEventDate').value = target.date;
+    newEventCategorySelect.value = target.category;
+    document.getElementById('newEventTitle').value = target.title;
+    document.getElementById('newEventDetail').value = target.detail || '';
+    document.getElementById('newEventUrl').value = target.url || '';
+    editingEventKey = key;
+    document.getElementById('addEventBtn').textContent = '저장';
+    document.getElementById('cancelEventEditBtn').style.display = '';
+    document.getElementById('newEventTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 
   function resetEventForm() {
     document.getElementById('newEventDate').value = '';
