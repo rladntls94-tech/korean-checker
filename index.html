@@ -250,15 +250,34 @@
     }
     .sched-empty { background: #fafafa; border: 1px solid #f2f2f2 !important; }
     .sched-today { background: #fff9e6; border: 2px solid #ffca28 !important; }
+    .sched-daynum-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 3px;
+    }
     .sched-daynum {
       font-size: 12px;
       font-weight: 700;
       color: #444;
-      margin-bottom: 3px;
       display: block;
     }
     .sched-sun-num { color: #e53935; }
     .sched-sat-num { color: #1e88e5; }
+    .sched-add-btn {
+      border: none;
+      background: transparent;
+      color: #bbb;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      padding: 0 2px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s, color 0.15s;
+    }
+    .sched-table td:hover .sched-add-btn { opacity: 1; }
+    .sched-add-btn:hover { color: #4f7ef8; }
     .sched-badge {
       display: block;
       margin-bottom: 2px;
@@ -685,6 +704,8 @@
     { date: '2026-07-02', category: 'solare',    title: '솔라레 패스 판매종료', url: PEARL_NOTICE(13299) },
     { date: '2026-07-06', category: 'custom',    title: '연우님과 PERS 관련 확인',
       detail: '붉은사막에 있는 PERS 시스템을 콘솔에서 활용할 수 없을지 확인' },
+    { date: '2026-07-06', category: 'solare',    title: '협동 대전 사전 안내 여부 논의',
+      detail: '솔라레 시즌 피날레 특별전 "우당탕탕 협동 대전"(7/23 업데이트)을 미리 얘기할지 논의' },
     { date: '2026-07-07', category: 'guild',     title: '길드박람회 카드 최종마감(23:59)', url: PEARL_NOTICE(13306),
       detail: '길드 박람회 소개카드 최종 제출 마감(23:59 UTC, 디스코드 guild-card 채널)' },
     { date: '2026-07-08', category: 'guild',     title: '길드가입 이벤트 종료(23:59)', url: PEARL_NOTICE(13302) },
@@ -819,7 +840,7 @@
           : `<span class="sched-badge sched-badge-plain${doneClass}" style="background:${meta.color}">${e.title}</span>`;
       }).join('');
       const maintTag = MAINTENANCE_DATES.has(dateStr) ? '<span class="sched-maint-tag" title="정기점검">점검</span>' : '';
-      html += `<td data-date="${dateStr}"><span class="sched-daynum${numClass}">${day}</span>${maintTag}${badges}</td>`;
+      html += `<td data-date="${dateStr}"><div class="sched-daynum-row"><span class="sched-daynum${numClass}">${day}</span><button type="button" class="sched-add-btn" data-date="${dateStr}" title="이 날짜에 기록 추가">+</button></div>${maintTag}${badges}</td>`;
       if (weekday === 6 && day !== totalDays) html += '</tr><tr>';
     }
 
@@ -902,6 +923,20 @@
       cell.appendChild(tag);
     }
   }
+
+  // ── 달력 셀에서 바로 기록 추가 (날짜 위에 마우스를 올리면 나오는 + 버튼) ──
+  document.getElementById('scheduleCalendars').addEventListener('click', e => {
+    const btn = e.target.closest('.sched-add-btn');
+    if (!btn) return;
+    const date = btn.dataset.date;
+    const text = prompt(`${date} 기록 추가:`);
+    if (!text || !text.trim()) return;
+    customEvents.push({ id: makeCustomId(), date, category: 'custom', title: text.trim(), custom: true });
+    saveCustomEvents(customEvents);
+    renderScheduleCalendars();
+    renderScheduleDetailTable();
+    highlightToday();
+  });
 
   // ── 새 일정 추가 폼 ─────────────────────────────────────────
   const newEventCategorySelect = document.getElementById('newEventCategory');
