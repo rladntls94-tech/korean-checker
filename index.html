@@ -433,6 +433,15 @@
       padding: 2px 6px;
     }
     .custom-delete-btn:hover { text-decoration: underline; }
+    .event-edit-btn {
+      background: none;
+      border: none;
+      color: #4f7ef8;
+      font-size: 0.78rem;
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+    .event-edit-btn:hover { text-decoration: underline; }
     .task-delete-btn {
       background: none;
       border: none;
@@ -443,6 +452,16 @@
       flex-shrink: 0;
     }
     .task-delete-btn:hover { text-decoration: underline; }
+    .task-edit-btn {
+      background: none;
+      border: none;
+      color: #4f7ef8;
+      font-size: 0.72rem;
+      cursor: pointer;
+      padding: 0 4px;
+      flex-shrink: 0;
+    }
+    .task-edit-btn:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -547,8 +566,10 @@
         <input type="date" id="newEventDate">
         <select id="newEventCategory"></select>
         <input type="text" id="newEventTitle" placeholder="내용 입력" style="flex:1;min-width:160px;">
+        <input type="text" id="newEventDetail" placeholder="상세 설명 (선택)" style="flex:1;min-width:160px;">
         <input type="url" id="newEventUrl" placeholder="링크 (선택)" style="flex:1;min-width:160px;">
         <button id="addEventBtn" class="add-form-btn">+ 추가</button>
+        <button type="button" id="cancelEventEditBtn" class="add-form-btn" style="display:none;">취소</button>
       </div>
       <table class="result-table detail-table">
         <thead>
@@ -609,7 +630,7 @@
     catch { return new Set(); }
   }
   function saveDoneSet(set) { localStorage.setItem(DONE_STORAGE_KEY, JSON.stringify([...set])); }
-  function eventKey(e) { return `${e.date}__${e.title}`; }
+  function eventKey(e) { return e.custom ? `custom__${e.id}` : (e._key || `${e.date}__${e.title}`); }
   function escapeAttr(str) { return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
 
   let doneSet = loadDoneSet();
@@ -617,6 +638,9 @@
   // ── 사용자가 직접 추가하는 일정/업무 (브라우저 localStorage에만 저장됨) ──
   const CUSTOM_EVENTS_KEY = 'bdo-console-schedule-custom-events';
   const CUSTOM_TASKS_KEY = 'bdo-console-schedule-custom-tasks';
+  // ── 기존(하드코딩된) 일정/업무를 직접 수정한 내용 (브라우저 localStorage에만 저장됨) ──
+  const EVENT_EDITS_KEY = 'bdo-console-schedule-event-edits';
+  const TASK_EDITS_KEY = 'bdo-console-schedule-task-edits';
 
   function loadCustomEvents() {
     try { return JSON.parse(localStorage.getItem(CUSTOM_EVENTS_KEY) || '[]'); }
@@ -630,12 +654,32 @@
   }
   function saveCustomTasks(list) { localStorage.setItem(CUSTOM_TASKS_KEY, JSON.stringify(list)); }
 
+  function loadEventEdits() {
+    try { return JSON.parse(localStorage.getItem(EVENT_EDITS_KEY) || '{}'); }
+    catch { return {}; }
+  }
+  function saveEventEdits(obj) { localStorage.setItem(EVENT_EDITS_KEY, JSON.stringify(obj)); }
+
+  function loadTaskEdits() {
+    try { return JSON.parse(localStorage.getItem(TASK_EDITS_KEY) || '{}'); }
+    catch { return {}; }
+  }
+  function saveTaskEdits(obj) { localStorage.setItem(TASK_EDITS_KEY, JSON.stringify(obj)); }
+
   let customEvents = loadCustomEvents();
   let customTasks = loadCustomTasks();
+  let eventEdits = loadEventEdits();
+  let taskEdits = loadTaskEdits();
 
   function makeCustomId() { return 'custom-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7); }
-  function allEvents() { return [...EVENTS, ...customEvents]; }
-  function allTasks() { return [...TASKS, ...customTasks]; }
+  function allEvents() {
+    const base = EVENTS.map(e => eventEdits[e._key] ? { ...e, ...eventEdits[e._key] } : e);
+    return [...base, ...customEvents];
+  }
+  function allTasks() {
+    const base = TASKS.map(t => taskEdits[t.id] ? { ...t, ...taskEdits[t.id] } : t);
+    return [...base, ...customTasks];
+  }
 
   // ── 정기점검일 (날짜 옆에 별도 표시) ──
   const MAINTENANCE_DATES = new Set(['2026-07-09', '2026-07-16', '2026-07-30']);
@@ -662,6 +706,7 @@
       return `<label class="task-item${isDone ? ' task-done' : ''}">
         <input type="checkbox" class="task-checkbox" data-key="${escapeAttr(key)}" ${isDone ? 'checked' : ''}>
         <span style="flex:1;">${t.text}</span>
+        <button type="button" class="task-edit-btn" data-task-id="${escapeAttr(t.id)}" title="수정">✎</button>
         ${deleteBtn}
       </label>`;
     }).join('');
@@ -677,8 +722,32 @@
   });
 
   document.getElementById('taskList').addEventListener('click', e => {
+    const editBtn = e.target.closest('.task-edit-btn');
+    if (editBtn) {
+      e.preventDefault();
+      const id = editBtn.dataset.taskId;
+      const current = allTasks().find(t => t.id === id);
+      if (!current) return;
+      const text = prompt('업무 내용 수정:', current.text);
+      if (text === null) return;
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      if (current.custom) {
+        const idx = customTasks.findIndex(t => t.id === id);
+        if (idx !== -1) {
+          customTasks[idx] = { ...customTasks[idx], text: trimmed };
+          saveCustomTasks(customTasks);
+        }
+      } else {
+        taskEdits[id] = { text: trimmed };
+        saveTaskEdits(taskEdits);
+      }
+      renderTaskList();
+      return;
+    }
     const btn = e.target.closest('.task-delete-btn');
     if (!btn) return;
+    e.preventDefault();
     customTasks = customTasks.filter(t => t.id !== btn.dataset.taskId);
     saveCustomTasks(customTasks);
     renderTaskList();
@@ -704,8 +773,8 @@
     { date: '2026-07-02', category: 'solare',    title: '솔라레 패스 판매종료', url: PEARL_NOTICE(13299) },
     { date: '2026-07-06', category: 'custom',    title: '연우님과 PERS 관련 확인',
       detail: '붉은사막에 있는 PERS 시스템을 콘솔에서 활용할 수 없을지 확인' },
-    { date: '2026-07-06', category: 'solare',    title: '협동 대전 사전 안내 여부 논의',
-      detail: '솔라레 시즌 피날레 특별전 "우당탕탕 협동 대전"(7/23 업데이트)을 미리 얘기할지 논의' },
+    { date: '2026-07-06', category: 'solare',    title: '패치노트 안내 내용 관련해서 논의',
+      detail: '솔라레 시즌 피날레 특별전 "우당탕탕 협동 대전"(7/23 업데이트) 패치노트 안내 내용 관련 논의' },
     { date: '2026-07-07', category: 'guild',     title: '길드박람회 카드 최종마감(23:59)', url: PEARL_NOTICE(13306),
       detail: '길드 박람회 소개카드 최종 제출 마감(23:59 UTC, 디스코드 guild-card 채널)' },
     { date: '2026-07-08', category: 'guild',     title: '길드가입 이벤트 종료(23:59)', url: PEARL_NOTICE(13302) },
@@ -754,7 +823,7 @@
       detail: '올비아 아카데미 3기 진행 기간 종료 (8/6 정기점검 후 ~ 11/12 정기점검 전)' },
     { date: '2026-08-13', category: 'community', title: 'Gleam 캠페인 종료(17:00 UTC)', url: PEARL_NOTICE(13320) },
     { date: '2026-08-13', category: 'community', title: '흑태자 기프트팩 종료(07:00 UTC)', url: PEARL_NOTICE(13324) },
-  ];
+  ].map(e => ({ ...e, _key: `${e.date}__${e.title}` }));
 
   // 화면에 표시할 달. 새 달이 시작되면 이 배열에 한 줄만 추가하면
   // 카드 HTML까지 전부 자동 생성됩니다 (직접 HTML을 편집할 필요 없음).
@@ -878,18 +947,35 @@
       const deleteBtn = e.custom
         ? `<button type="button" class="custom-delete-btn" data-event-id="${escapeAttr(e.id)}">삭제</button>`
         : '';
+      const editBtn = `<button type="button" class="event-edit-btn" data-event-key="${escapeAttr(key)}">수정</button>`;
       return `<tr class="${isDone ? 'row-done' : ''}">
         <td class="done-cell"><input type="checkbox" class="done-checkbox" data-key="${escapeAttr(key)}" ${isDone ? 'checked' : ''}></td>
         <td>${formatDateLabel(e.date)}</td>
         <td><span class="tag" style="background:${meta.color};color:#fff;">${meta.label}</span></td>
         <td>${e.detail || e.title}</td>
         <td>${link}</td>
-        <td>${deleteBtn}</td>
+        <td>${editBtn}${deleteBtn}</td>
       </tr>`;
     }).join('');
   }
 
   document.getElementById('scheduleDetailBody').addEventListener('click', e => {
+    const editBtn = e.target.closest('.event-edit-btn');
+    if (editBtn) {
+      const key = editBtn.dataset.eventKey;
+      const target = allEvents().find(ev => eventKey(ev) === key);
+      if (!target) return;
+      document.getElementById('newEventDate').value = target.date;
+      newEventCategorySelect.value = target.category;
+      document.getElementById('newEventTitle').value = target.title;
+      document.getElementById('newEventDetail').value = target.detail || '';
+      document.getElementById('newEventUrl').value = target.url || '';
+      editingEventKey = key;
+      document.getElementById('addEventBtn').textContent = '저장';
+      document.getElementById('cancelEventEditBtn').style.display = '';
+      document.getElementById('newEventTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
     const btn = e.target.closest('.custom-delete-btn');
     if (!btn) return;
     customEvents = customEvents.filter(ev => ev.id !== btn.dataset.eventId);
@@ -938,24 +1024,55 @@
     highlightToday();
   });
 
-  // ── 새 일정 추가 폼 ─────────────────────────────────────────
+  // ── 새 일정 추가 / 기존 일정 수정 폼 (같은 폼을 재사용) ──────────
   const newEventCategorySelect = document.getElementById('newEventCategory');
   newEventCategorySelect.innerHTML = Object.entries(CATEGORY_META)
     .map(([key, meta]) => `<option value="${key}">${meta.label}</option>`).join('');
+
+  let editingEventKey = null;
+
+  function resetEventForm() {
+    document.getElementById('newEventDate').value = '';
+    document.getElementById('newEventTitle').value = '';
+    document.getElementById('newEventDetail').value = '';
+    document.getElementById('newEventUrl').value = '';
+  }
+
+  function exitEventEditMode() {
+    editingEventKey = null;
+    document.getElementById('addEventBtn').textContent = '+ 추가';
+    document.getElementById('cancelEventEditBtn').style.display = 'none';
+    resetEventForm();
+  }
+
+  document.getElementById('cancelEventEditBtn').addEventListener('click', exitEventEditMode);
 
   document.getElementById('addEventBtn').addEventListener('click', () => {
     const date = document.getElementById('newEventDate').value;
     const category = newEventCategorySelect.value;
     const title = document.getElementById('newEventTitle').value.trim();
+    const detail = document.getElementById('newEventDetail').value.trim();
     const url = document.getElementById('newEventUrl').value.trim();
     if (!date || !title) { alert('날짜와 내용을 입력해주세요.'); return; }
 
-    customEvents.push({ id: makeCustomId(), date, category, title, url: url || undefined, custom: true });
-    saveCustomEvents(customEvents);
-
-    document.getElementById('newEventDate').value = '';
-    document.getElementById('newEventTitle').value = '';
-    document.getElementById('newEventUrl').value = '';
+    if (editingEventKey) {
+      const target = allEvents().find(ev => eventKey(ev) === editingEventKey);
+      if (target && target.custom) {
+        const idx = customEvents.findIndex(ev => ev.id === target.id);
+        if (idx !== -1) {
+          customEvents[idx] = { ...customEvents[idx], date, category, title, detail, url };
+          saveCustomEvents(customEvents);
+        }
+      } else {
+        eventEdits[editingEventKey] = { date, category, title, detail, url };
+        saveEventEdits(eventEdits);
+      }
+      exitEventEditMode();
+    } else {
+      customEvents.push({ id: makeCustomId(), date, category, title, detail: detail || undefined, url: url || undefined, custom: true });
+      saveCustomEvents(customEvents);
+      resetEventForm();
+    }
 
     renderScheduleCalendars();
     renderScheduleDetailTable();
