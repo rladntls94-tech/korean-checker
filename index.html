@@ -293,8 +293,11 @@
     }
     .sched-badge:hover { opacity: 0.8; text-decoration: underline; }
     .sched-badge:active { transform: scale(0.97); }
-    .sched-badge-plain { cursor: default; }
+    .sched-badge-plain { cursor: grab; }
     .sched-badge-plain:hover { opacity: 1; text-decoration: none; }
+    .sched-badge-plain:active { cursor: grabbing; }
+    .sched-badge.dragging { opacity: 0.4; }
+    .sched-table td.sched-drop-target { background: #eef3ff; }
     .sched-maint-tag {
       display: inline-block;
       background: #fff3f3;
@@ -907,8 +910,8 @@
         const key = eventKey(e);
         const doneClass = doneSet.has(key) ? ' sched-badge-done' : '';
         return e.url
-          ? `<a class="sched-badge${doneClass}" style="background:${meta.color}" href="${e.url}" target="_blank" rel="noopener" data-event-key="${escapeAttr(key)}">${e.title}</a>`
-          : `<span class="sched-badge sched-badge-plain${doneClass}" style="background:${meta.color}" data-event-key="${escapeAttr(key)}">${e.title}</span>`;
+          ? `<a class="sched-badge${doneClass}" style="background:${meta.color}" href="${e.url}" target="_blank" rel="noopener" draggable="true" data-event-key="${escapeAttr(key)}">${e.title}</a>`
+          : `<span class="sched-badge sched-badge-plain${doneClass}" style="background:${meta.color}" draggable="true" data-event-key="${escapeAttr(key)}">${e.title}</span>`;
       }).join('');
       const maintTag = MAINTENANCE_DATES.has(dateStr) ? '<span class="sched-maint-tag" title="정기점검">점검</span>' : '';
       html += `<td data-date="${dateStr}"><div class="sched-daynum-row"><span class="sched-daynum${numClass}">${day}</span><button type="button" class="sched-add-btn" data-date="${dateStr}" title="이 날짜에 기록 추가">+</button></div>${maintTag}${badges}</td>`;
@@ -1035,6 +1038,63 @@
     renderScheduleCalendars();
     renderScheduleDetailTable();
     highlightToday();
+  });
+
+  function moveEventToDate(key, newDate) {
+    const target = allEvents().find(ev => eventKey(ev) === key);
+    if (!target || target.date === newDate) return;
+    if (target.custom) {
+      const idx = customEvents.findIndex(ev => ev.id === target.id);
+      if (idx !== -1) {
+        customEvents[idx] = { ...customEvents[idx], date: newDate };
+        saveCustomEvents(customEvents);
+      }
+    } else {
+      eventEdits[key] = { ...(eventEdits[key] || {}), date: newDate };
+      saveEventEdits(eventEdits);
+    }
+    renderScheduleCalendars();
+    renderScheduleDetailTable();
+    highlightToday();
+  }
+
+  // ── 달력에서 배지를 드래그해서 다른 날짜로 이동 ─────────────────
+  const scheduleCalendarsEl = document.getElementById('scheduleCalendars');
+
+  scheduleCalendarsEl.addEventListener('dragstart', e => {
+    const badge = e.target.closest('.sched-badge');
+    if (!badge) return;
+    e.dataTransfer.setData('text/plain', badge.dataset.eventKey);
+    e.dataTransfer.effectAllowed = 'move';
+    badge.classList.add('dragging');
+  });
+
+  scheduleCalendarsEl.addEventListener('dragend', e => {
+    const badge = e.target.closest('.sched-badge');
+    if (badge) badge.classList.remove('dragging');
+  });
+
+  scheduleCalendarsEl.addEventListener('dragover', e => {
+    const td = e.target.closest('td[data-date]');
+    if (!td) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    td.classList.add('sched-drop-target');
+  });
+
+  scheduleCalendarsEl.addEventListener('dragleave', e => {
+    const td = e.target.closest('td[data-date]');
+    if (td) td.classList.remove('sched-drop-target');
+  });
+
+  scheduleCalendarsEl.addEventListener('drop', e => {
+    const td = e.target.closest('td[data-date]');
+    if (!td) return;
+    e.preventDefault();
+    td.classList.remove('sched-drop-target');
+    const key = e.dataTransfer.getData('text/plain');
+    if (!key) return;
+    moveEventToDate(key, td.dataset.date);
   });
 
   // ── 새 일정 추가 / 기존 일정 수정 폼 (같은 폼을 재사용) ──────────
