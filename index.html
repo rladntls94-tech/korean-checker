@@ -646,15 +646,22 @@
   const toolSubtitle = document.getElementById('toolSubtitle');
 
   // 콘솔 일정 탭은 비밀번호를 확인한 후에만 열람 가능 (세션 동안만 유지)
-  const SCHEDULE_PASSWORD = '8497';
+  // 비밀번호 원문 대신 SHA-256 해시만 저장 — view-source로 평문이 바로 보이지 않도록 함
+  const SCHEDULE_PASSWORD_HASH = 'b070751113ee70c6bb584a0de7ae93cfe5c6f489925bbccfb7ab30c59378df69';
   const SCHEDULE_UNLOCK_KEY = 'bdo-schedule-unlocked';
 
+  async function sha256Hex(text) {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       if (btn.dataset.tab === 'schedule' && sessionStorage.getItem(SCHEDULE_UNLOCK_KEY) !== 'yes') {
         const input = prompt('비밀번호를 입력하세요:');
         if (input === null) return;
-        if (input !== SCHEDULE_PASSWORD) {
+        const hash = await sha256Hex(input);
+        if (hash !== SCHEDULE_PASSWORD_HASH) {
           alert('비밀번호가 올바르지 않습니다.');
           return;
         }
