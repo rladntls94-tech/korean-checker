@@ -645,8 +645,21 @@
   };
   const toolSubtitle = document.getElementById('toolSubtitle');
 
+  // 콘솔 일정 탭은 비밀번호를 확인한 후에만 열람 가능 (세션 동안만 유지)
+  const SCHEDULE_PASSWORD = '8497';
+  const SCHEDULE_UNLOCK_KEY = 'bdo-schedule-unlocked';
+
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (btn.dataset.tab === 'schedule' && sessionStorage.getItem(SCHEDULE_UNLOCK_KEY) !== 'yes') {
+        const input = prompt('비밀번호를 입력하세요:');
+        if (input === null) return;
+        if (input !== SCHEDULE_PASSWORD) {
+          alert('비밀번호가 올바르지 않습니다.');
+          return;
+        }
+        sessionStorage.setItem(SCHEDULE_UNLOCK_KEY, 'yes');
+      }
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       btn.classList.add('active');
