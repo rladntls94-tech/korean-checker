@@ -336,6 +336,42 @@
     .board-link { color: #4f7ef8; text-decoration: none; }
     .board-link:hover { text-decoration: underline; }
 
+    /* ── 일정 상세 보기 모달 (달력 배지 더블클릭) ─────────────── */
+    .event-detail-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .event-detail-box {
+      position: relative;
+      background: #fff;
+      border-radius: 10px;
+      padding: 22px 26px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+    }
+    .event-detail-close {
+      position: absolute;
+      top: 6px;
+      right: 10px;
+      border: none;
+      background: transparent;
+      font-size: 22px;
+      line-height: 1;
+      color: #aaa;
+      cursor: pointer;
+    }
+    .event-detail-close:hover { color: #333; }
+    .event-detail-date { font-size: 0.8rem; color: #888; font-weight: 700; margin-bottom: 8px; }
+    .event-detail-tag { display: inline-block; border-radius: 5px; padding: 3px 10px; font-size: 0.78rem; color: #fff; margin-bottom: 10px; }
+    .event-detail-box h3 { margin: 0 0 10px; font-size: 1.05rem; color: #222; }
+    .event-detail-box p { margin: 0 0 14px; font-size: 0.9rem; line-height: 1.5; color: #444; white-space: pre-wrap; }
+
     .detail-table { table-layout: auto; }
     .detail-table th:nth-child(1), .detail-table td:nth-child(1),
     .detail-table th:nth-child(2), .detail-table td:nth-child(2),
@@ -581,6 +617,18 @@
         </thead>
         <tbody id="scheduleDetailBody"></tbody>
       </table>
+    </div>
+
+    <!-- 달력 배지 더블클릭 시 상세 내용을 보여주는 모달 -->
+    <div id="eventDetailOverlay" class="event-detail-overlay" style="display:none;">
+      <div class="event-detail-box">
+        <button type="button" id="eventDetailCloseBtn" class="event-detail-close">&times;</button>
+        <div class="event-detail-date" id="eventDetailDate"></div>
+        <span class="event-detail-tag" id="eventDetailTag"></span>
+        <h3 id="eventDetailTitle"></h3>
+        <p id="eventDetailBody"></p>
+        <a id="eventDetailLink" class="board-link" href="#" target="_blank" rel="noopener">관련 링크 열기 →</a>
+      </div>
     </div>
 
   </div>
@@ -1038,6 +1086,64 @@
     renderScheduleCalendars();
     renderScheduleDetailTable();
     highlightToday();
+  });
+
+  // ── 달력에서 배지를 더블클릭하면 상세 내용 모달 표시 ──────────
+  function openEventDetailModal(key) {
+    const target = allEvents().find(ev => eventKey(ev) === key);
+    if (!target) return;
+    const meta = CATEGORY_META[target.category];
+    document.getElementById('eventDetailDate').textContent = formatDateLabel(target.date);
+    const tagEl = document.getElementById('eventDetailTag');
+    tagEl.textContent = meta.label;
+    tagEl.style.background = meta.color;
+    document.getElementById('eventDetailTitle').textContent = target.title;
+    const bodyEl = document.getElementById('eventDetailBody');
+    bodyEl.textContent = target.detail || '';
+    bodyEl.style.display = target.detail ? '' : 'none';
+    const linkEl = document.getElementById('eventDetailLink');
+    if (target.url) {
+      linkEl.href = target.url;
+      linkEl.style.display = '';
+    } else {
+      linkEl.style.display = 'none';
+    }
+    document.getElementById('eventDetailOverlay').style.display = 'flex';
+  }
+
+  function closeEventDetailModal() {
+    document.getElementById('eventDetailOverlay').style.display = 'none';
+  }
+
+  document.getElementById('eventDetailCloseBtn').addEventListener('click', closeEventDetailModal);
+  document.getElementById('eventDetailOverlay').addEventListener('click', e => {
+    if (e.target.id === 'eventDetailOverlay') closeEventDetailModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeEventDetailModal();
+  });
+
+  // 링크가 있는 배지는 단일 클릭 시 새 탭으로 이동하는데, 더블클릭 중 첫 클릭이
+  // 먼저 이동해버리지 않도록 짧게 지연시켰다가 두 번째 클릭이 오면 취소하고 모달을 띄움
+  let badgeClickTimer = null;
+
+  document.getElementById('scheduleCalendars').addEventListener('click', e => {
+    const badge = e.target.closest('.sched-badge');
+    if (!badge || badge.tagName !== 'A') return;
+    e.preventDefault();
+    if (badgeClickTimer) clearTimeout(badgeClickTimer);
+    const href = badge.href;
+    badgeClickTimer = setTimeout(() => {
+      badgeClickTimer = null;
+      window.open(href, '_blank', 'noopener');
+    }, 250);
+  });
+
+  document.getElementById('scheduleCalendars').addEventListener('dblclick', e => {
+    const badge = e.target.closest('.sched-badge');
+    if (!badge) return;
+    if (badgeClickTimer) { clearTimeout(badgeClickTimer); badgeClickTimer = null; }
+    openEventDetailModal(badge.dataset.eventKey);
   });
 
   function moveEventToDate(key, newDate) {
