@@ -372,18 +372,29 @@
     .event-detail-box h3 { margin: 0 0 10px; font-size: 1.05rem; color: #222; }
     .event-detail-box h3.event-detail-title-done { text-decoration: line-through; opacity: 0.5; }
     .event-detail-box p { margin: 0 0 14px; font-size: 0.9rem; line-height: 1.5; color: #444; white-space: pre-wrap; }
-    .event-detail-done-row {
+    .event-detail-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      justify-content: space-between;
+      gap: 12px;
       margin-top: 14px;
       padding-top: 12px;
       border-top: 1px dashed #e0e4ed;
-      font-size: 0.88rem;
-      color: #444;
-      cursor: pointer;
     }
+    .event-detail-done-row { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; color: #444; cursor: pointer; }
     .event-detail-done-row input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; }
+    .event-detail-edit-btn {
+      border: 1.5px solid #dde1ea;
+      border-radius: 7px;
+      background: #fff;
+      padding: 4px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #4f7ef8;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .event-detail-edit-btn:hover { background: #f0f4ff; }
 
     .detail-table { table-layout: auto; }
     .detail-table th:nth-child(1), .detail-table td:nth-child(1),
@@ -641,10 +652,13 @@
         <h3 id="eventDetailTitle"></h3>
         <p id="eventDetailBody"></p>
         <a id="eventDetailLink" class="board-link" href="#" target="_blank" rel="noopener">관련 링크 열기 →</a>
-        <label class="event-detail-done-row">
-          <input type="checkbox" id="eventDetailDoneCheckbox">
-          <span>완료 처리</span>
-        </label>
+        <div class="event-detail-actions">
+          <label class="event-detail-done-row">
+            <input type="checkbox" id="eventDetailDoneCheckbox">
+            <span>완료 처리</span>
+          </label>
+          <button type="button" id="eventDetailEditBtn" class="event-detail-edit-btn">수정</button>
+        </div>
       </div>
     </div>
 
@@ -1173,6 +1187,14 @@
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeEventDetailModal();
+  });
+
+  // 모달의 수정 버튼 — 모달을 닫고 상세 목록 하단의 수정 폼을 채워서 열어줌
+  document.getElementById('eventDetailEditBtn').addEventListener('click', () => {
+    if (!openDetailEventKey) return;
+    const key = openDetailEventKey;
+    closeEventDetailModal();
+    openEventEditForm(key);
   });
 
   // 모달의 완료 체크박스를 토글하면 캘린더 배지/상세 목록의 완료 상태와 동일하게 동기화됨
