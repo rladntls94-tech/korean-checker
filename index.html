@@ -370,7 +370,20 @@
     .event-detail-date { font-size: 0.8rem; color: #888; font-weight: 700; margin-bottom: 8px; }
     .event-detail-tag { display: inline-block; border-radius: 5px; padding: 3px 10px; font-size: 0.78rem; color: #fff; margin-bottom: 10px; }
     .event-detail-box h3 { margin: 0 0 10px; font-size: 1.05rem; color: #222; }
+    .event-detail-box h3.event-detail-title-done { text-decoration: line-through; opacity: 0.5; }
     .event-detail-box p { margin: 0 0 14px; font-size: 0.9rem; line-height: 1.5; color: #444; white-space: pre-wrap; }
+    .event-detail-done-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed #e0e4ed;
+      font-size: 0.88rem;
+      color: #444;
+      cursor: pointer;
+    }
+    .event-detail-done-row input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; }
 
     .detail-table { table-layout: auto; }
     .detail-table th:nth-child(1), .detail-table td:nth-child(1),
@@ -628,6 +641,10 @@
         <h3 id="eventDetailTitle"></h3>
         <p id="eventDetailBody"></p>
         <a id="eventDetailLink" class="board-link" href="#" target="_blank" rel="noopener">관련 링크 열기 →</a>
+        <label class="event-detail-done-row">
+          <input type="checkbox" id="eventDetailDoneCheckbox">
+          <span>완료 처리</span>
+        </label>
       </div>
     </div>
 
@@ -1115,15 +1132,20 @@
   });
 
   // ── 달력에서 배지를 더블클릭하면 상세 내용 모달 표시 ──────────
+  let openDetailEventKey = null;
+
   function openEventDetailModal(key) {
     const target = allEvents().find(ev => eventKey(ev) === key);
     if (!target) return;
+    openDetailEventKey = key;
     const meta = CATEGORY_META[target.category];
     document.getElementById('eventDetailDate').textContent = formatDateLabel(target.date);
     const tagEl = document.getElementById('eventDetailTag');
     tagEl.textContent = meta.label;
     tagEl.style.background = meta.color;
-    document.getElementById('eventDetailTitle').textContent = target.title;
+    const titleEl = document.getElementById('eventDetailTitle');
+    titleEl.textContent = target.title;
+    titleEl.classList.toggle('event-detail-title-done', doneSet.has(key));
     const bodyEl = document.getElementById('eventDetailBody');
     bodyEl.textContent = target.detail || '';
     bodyEl.style.display = target.detail ? '' : 'none';
@@ -1134,11 +1156,13 @@
     } else {
       linkEl.style.display = 'none';
     }
+    document.getElementById('eventDetailDoneCheckbox').checked = doneSet.has(key);
     document.getElementById('eventDetailOverlay').style.display = 'flex';
   }
 
   function closeEventDetailModal() {
     document.getElementById('eventDetailOverlay').style.display = 'none';
+    openDetailEventKey = null;
   }
 
   document.getElementById('eventDetailCloseBtn').addEventListener('click', closeEventDetailModal);
@@ -1147,6 +1171,17 @@
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeEventDetailModal();
+  });
+
+  // 모달의 완료 체크박스를 토글하면 캘린더 배지/상세 목록의 완료 상태와 동일하게 동기화됨
+  document.getElementById('eventDetailDoneCheckbox').addEventListener('change', e => {
+    if (!openDetailEventKey) return;
+    if (e.target.checked) doneSet.add(openDetailEventKey); else doneSet.delete(openDetailEventKey);
+    saveDoneSet(doneSet);
+    document.getElementById('eventDetailTitle').classList.toggle('event-detail-title-done', e.target.checked);
+    renderScheduleCalendars();
+    renderScheduleDetailTable();
+    highlightToday();
   });
 
   // 링크가 있는 배지는 단일 클릭 시 새 탭으로 이동하는데, 더블클릭 중 첫 클릭이
