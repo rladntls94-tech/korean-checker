@@ -357,6 +357,18 @@
     .sched-cat-chip .dot { width: 9px; height: 9px; border-radius: 2px; }
     .sched-cat-chip.inactive { opacity: 0.35; }
     .sched-cat-chip:hover { border-color: #4f7ef8; color: #4f7ef8; }
+    .sched-search { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; }
+    .sched-search input {
+      flex: 0 1 280px;
+      padding: 6px 10px;
+      border: 1px solid #d0d7e2;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .sched-search input:focus { outline: none; border-color: #4f7ef8; }
+    .sched-search button { border: none; background: transparent; color: #999; cursor: pointer; font-size: 13px; display: none; }
+    .sched-search button:hover { color: #d32f2f; }
+    .sched-search-count { font-size: 12px; color: #4f7ef8; font-weight: 600; }
     .sched-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     .sched-toolbar button {
       border: 1px solid #d0d7e2;
@@ -663,11 +675,10 @@
 
     <div class="card">
       <h2>검은사막 콘솔 일정</h2>
-      <p class="subtitle" style="margin-bottom:0;">공지 게시일 기준 6월 11일 ~ 6월 25일 사이 발표된 이벤트 마감/시작일 정리</p>
       <!-- 완료 체크·직접 추가한 일정 등 브라우저(localStorage) 데이터의 백업/복원 + 폰 캘린더용 내보내기 -->
       <div class="sched-toolbar">
-        <button type="button" id="backupExportBtn">⬇ 백업 내보내기</button>
-        <button type="button" id="backupImportBtn">⬆ 백업 가져오기</button>
+        <button type="button" id="backupExportBtn">⬆ 백업 내보내기</button>
+        <button type="button" id="backupImportBtn">⬇ 백업 가져오기</button>
         <input type="file" id="backupImportInput" accept=".json,application/json" style="display:none;">
         <button type="button" id="icsExportBtn">📅 캘린더(.ics) 내보내기</button>
       </div>
@@ -683,6 +694,11 @@
       <button id="schedPrev" class="sched-pager-btn">◀ 이전</button>
       <span id="schedPageLabel" class="sched-page-label"></span>
       <button id="schedNext" class="sched-pager-btn">다음 ▶</button>
+    </div>
+    <div class="sched-search">
+      <input type="text" id="schedSearchInput" placeholder="🔍 일정 검색 (제목·상세 내용)">
+      <button type="button" id="schedSearchClear" title="검색어 지우기">✕</button>
+      <span id="schedSearchCount" class="sched-search-count"></span>
     </div>
     <div id="schedCategoryLegend" class="sched-cat-legend"></div>
     <div id="scheduleCalendars"></div>
@@ -1114,6 +1130,30 @@
     highlightToday();
   });
 
+  // ── 일정 검색 (제목·상세 내용 대상, 카테고리 필터와 함께 적용) ──
+  let searchQuery = '';
+  function matchesSearch(e) {
+    if (!searchQuery) return true;
+    return `${e.title} ${e.detail || ''}`.toLowerCase().includes(searchQuery);
+  }
+  function eventVisible(e) { return categoryVisible(e.category) && matchesSearch(e); }
+
+  const schedSearchInput = document.getElementById('schedSearchInput');
+  schedSearchInput.addEventListener('input', () => {
+    searchQuery = schedSearchInput.value.trim().toLowerCase();
+    document.getElementById('schedSearchClear').style.display = searchQuery ? 'inline' : 'none';
+    document.getElementById('schedSearchCount').textContent =
+      searchQuery ? `${allEvents().filter(eventVisible).length}건` : '';
+    renderScheduleCalendars();
+    renderScheduleDetailTable();
+    highlightToday();
+  });
+  document.getElementById('schedSearchClear').addEventListener('click', () => {
+    schedSearchInput.value = '';
+    schedSearchInput.dispatchEvent(new Event('input'));
+    schedSearchInput.focus();
+  });
+
   // 일정이 많은 날짜 셀은 접어두고 "+N개 더보기"로 표시
   const expandedCells = new Set();
   const MAX_BADGES_PER_CELL = 5;
@@ -1184,11 +1224,11 @@
       const weekday = (firstWeekday + day - 1) % 7;
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const numClass = weekday === 0 ? ' sched-sun-num' : weekday === 6 ? ' sched-sat-num' : '';
-      const dayEvents = allEvents().filter(e => e.date === dateStr && categoryVisible(e.category));
+      const dayEvents = allEvents().filter(e => e.date === dateStr && eventVisible(e));
       const expanded = expandedCells.has(dateStr);
-      // 미완료 일정은 항상 전부 표시 — 일정이 많은 날에는 완료 처리된 항목만 접음
+      // 미완료 일정은 항상 전부 표시 — 일정이 많은 날에는 완료 처리된 항목만 접음 (검색 중에는 접지 않음)
       const doneEvents = dayEvents.filter(e => doneSet.has(eventKey(e)));
-      const collapseDone = !expanded && dayEvents.length > MAX_BADGES_PER_CELL && doneEvents.length > 0;
+      const collapseDone = !searchQuery && !expanded && dayEvents.length > MAX_BADGES_PER_CELL && doneEvents.length > 0;
       const visibleEvents = collapseDone ? dayEvents.filter(e => !doneSet.has(eventKey(e))) : dayEvents;
       let badges = visibleEvents.map(e => {
         const meta = CATEGORY_META[e.category];
@@ -1232,7 +1272,7 @@
 
   function renderScheduleDetailTable() {
     const tbody = document.getElementById('scheduleDetailBody');
-    const sorted = allEvents().filter(e => categoryVisible(e.category)).sort((a, b) => a.date.localeCompare(b.date));
+    const sorted = allEvents().filter(eventVisible).sort((a, b) => a.date.localeCompare(b.date));
     tbody.innerHTML = sorted.map(e => {
       const meta = CATEGORY_META[e.category];
       const key = eventKey(e);
@@ -1317,7 +1357,7 @@
     const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
     const endStr = addDaysToDateStr(todayStr, 7);
     const upcoming = allEvents()
-      .filter(e => e.date >= todayStr && e.date <= endStr && categoryVisible(e.category))
+      .filter(e => e.date >= todayStr && e.date <= endStr && eventVisible(e))
       .sort((a, b) => a.date.localeCompare(b.date));
     const rows = upcoming.map(e => {
       const meta = CATEGORY_META[e.category];
