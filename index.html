@@ -1064,6 +1064,8 @@
       detail: '매칭 시작 전 월드 채팅으로 안내 → 이벤트 종료 후 GM과 같은 전장에서 매치 완료한 유저 대상 칭호 "GM과 친한(7일)" 지급. 참여 일자(당일) 내 지급 필수.' },
     { date: '2026-07-23', category: 'bug',       title: '해양 명성 상세 확인 불가 현상 수정 예정(정기점검)',
       detail: '해양 명성 상세 내용을 확인할 수 없는 현상 — 7/23 정기점검을 통해 수정 예정. 점검 후 수정 반영 여부 확인.' },
+    { date: '2026-07-10', category: 'custom',    title: '[운영] 6월 상품권 결산 잔액 확인',
+      url: 'https://pearlabyss-op.slack.com/archives/C0B8G14UFDW/p1782885882278049' },
     { date: '2026-07-30', category: 'custom',    title: '[운영] 8/6 일괄삭제 리마인드 공지 준비',
       detail: '8/6 정기점검 시 일괄 삭제 2건 사전 안내: ① 모험의 기록 아이템·진행 중 이벤트 의뢰·소지 의뢰서·전용 UI ② 은화상점 이국의 음식 아이템. 점검 1주 전(7/30) 기준으로 잡아둠 — 필요 시 날짜 조정.' },
   ].map(e => ({ ...e, _key: `${e.date}__${e.title}` }));
@@ -1184,9 +1186,10 @@
       const numClass = weekday === 0 ? ' sched-sun-num' : weekday === 6 ? ' sched-sat-num' : '';
       const dayEvents = allEvents().filter(e => e.date === dateStr && categoryVisible(e.category));
       const expanded = expandedCells.has(dateStr);
-      const visibleEvents = (!expanded && dayEvents.length > MAX_BADGES_PER_CELL)
-        ? dayEvents.slice(0, MAX_BADGES_PER_CELL - 1)
-        : dayEvents;
+      // 미완료 일정은 항상 전부 표시 — 일정이 많은 날에는 완료 처리된 항목만 접음
+      const doneEvents = dayEvents.filter(e => doneSet.has(eventKey(e)));
+      const collapseDone = !expanded && dayEvents.length > MAX_BADGES_PER_CELL && doneEvents.length > 0;
+      const visibleEvents = collapseDone ? dayEvents.filter(e => !doneSet.has(eventKey(e))) : dayEvents;
       let badges = visibleEvents.map(e => {
         const meta = CATEGORY_META[e.category];
         const key = eventKey(e);
@@ -1196,10 +1199,10 @@
           ? `<a class="sched-badge${doneClass}" style="background:${meta.color}" href="${e.url}" target="_blank" rel="noopener" draggable="true" data-event-key="${escapeAttr(key)}" title="${tooltip}">${e.title}</a>`
           : `<span class="sched-badge sched-badge-plain${doneClass}" style="background:${meta.color}" draggable="true" data-event-key="${escapeAttr(key)}" title="${tooltip}">${e.title}</span>`;
       }).join('');
-      if (dayEvents.length > visibleEvents.length) {
-        badges += `<button type="button" class="sched-more-btn" data-date="${dateStr}">+${dayEvents.length - visibleEvents.length}개 더보기</button>`;
-      } else if (expanded && dayEvents.length > MAX_BADGES_PER_CELL) {
-        badges += `<button type="button" class="sched-more-btn" data-date="${dateStr}">접기</button>`;
+      if (collapseDone) {
+        badges += `<button type="button" class="sched-more-btn" data-date="${dateStr}">✓ 완료 ${doneEvents.length}개 보기</button>`;
+      } else if (expanded && dayEvents.length > MAX_BADGES_PER_CELL && doneEvents.length > 0) {
+        badges += `<button type="button" class="sched-more-btn" data-date="${dateStr}">완료 항목 접기</button>`;
       }
       const maintTag = MAINTENANCE_DATES.has(dateStr) ? '<span class="sched-maint-tag" title="정기점검">점검</span>' : '';
       html += `<td data-date="${dateStr}"><div class="sched-daynum-row"><span class="sched-daynum${numClass}">${day}</span><button type="button" class="sched-add-btn" data-date="${dateStr}" title="이 날짜에 기록 추가">+</button></div>${maintTag}${badges}</td>`;
