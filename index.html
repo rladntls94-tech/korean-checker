@@ -326,6 +326,66 @@
       z-index: 1;
       pointer-events: none;
     }
+    .sched-more-btn {
+      display: block;
+      width: 100%;
+      border: none;
+      background: #eef1f7;
+      color: #556;
+      font-size: 10px;
+      font-weight: 600;
+      border-radius: 4px;
+      padding: 2px 4px;
+      cursor: pointer;
+      margin-bottom: 2px;
+    }
+    .sched-more-btn:hover { background: #e0e6f5; color: #4f7ef8; }
+    .sched-cat-legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+    .sched-cat-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #555;
+      cursor: pointer;
+      user-select: none;
+    }
+    .sched-cat-chip .dot { width: 9px; height: 9px; border-radius: 2px; }
+    .sched-cat-chip.inactive { opacity: 0.35; }
+    .sched-cat-chip:hover { border-color: #4f7ef8; color: #4f7ef8; }
+    .sched-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .sched-toolbar button {
+      border: 1px solid #d0d7e2;
+      background: #fff;
+      color: #445;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .sched-toolbar button:hover { background: #f0f4ff; border-color: #4f7ef8; color: #4f7ef8; }
+    .sched-summary-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 5px 2px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .sched-summary-row:last-of-type { border-bottom: none; }
+    .sched-summary-row:hover { background: #f8faff; }
+    .sched-summary-date { flex-shrink: 0; font-weight: 700; color: #444; width: 64px; font-size: 12px; }
+    .sched-summary-date.is-today { color: #e6a700; }
+    .sched-summary-row .tag { font-size: 10px; padding: 1px 6px; border-radius: 3px; color: #fff; flex-shrink: 0; }
+    .sched-summary-title.done { text-decoration: line-through; color: #aaa; }
+    .sched-summary-empty { color: #999; font-size: 13px; padding: 4px 0; }
+    .sched-summary-maint { font-size: 12px; color: #d32f2f; margin-top: 8px; font-weight: 600; }
+    .deploy-update-warn { color: #d32f2f; font-weight: 700; margin-left: 8px; cursor: pointer; text-decoration: underline; }
     .sched-month h2 {
       font-size: 15px;
       margin: 0 0 12px;
@@ -604,6 +664,18 @@
     <div class="card">
       <h2>검은사막 콘솔 일정</h2>
       <p class="subtitle" style="margin-bottom:0;">공지 게시일 기준 6월 11일 ~ 6월 25일 사이 발표된 이벤트 마감/시작일 정리</p>
+      <!-- 완료 체크·직접 추가한 일정 등 브라우저(localStorage) 데이터의 백업/복원 + 폰 캘린더용 내보내기 -->
+      <div class="sched-toolbar">
+        <button type="button" id="backupExportBtn">⬇ 백업 내보내기</button>
+        <button type="button" id="backupImportBtn">⬆ 백업 가져오기</button>
+        <input type="file" id="backupImportInput" accept=".json,application/json" style="display:none;">
+        <button type="button" id="icsExportBtn">📅 캘린더(.ics) 내보내기</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>오늘 &amp; 다가오는 7일</h2>
+      <div id="todaySummary"></div>
     </div>
 
     <!-- 캘린더 카드는 JS의 MONTHS 배열에서 자동 생성되며, 2개월씩 페이지로 넘겨봅니다 -->
@@ -612,6 +684,7 @@
       <span id="schedPageLabel" class="sched-page-label"></span>
       <button id="schedNext" class="sched-pager-btn">다음 ▶</button>
     </div>
+    <div id="schedCategoryLegend" class="sched-cat-legend"></div>
     <div id="scheduleCalendars"></div>
     <div class="card">
       <p class="sched-note" style="margin-top:0;">* 사막의빛 보너스 이벤트(7/23~8/6)는 전 세계 목표(8천만 개)를 7/15까지 100% 달성했을 경우에만 진행됩니다.</p>
@@ -1006,7 +1079,42 @@
     { year: 2026, month: 12 },
   ];
   const MONTHS_PER_PAGE = 2;
-  let currentPage = 0;
+  // 접속 시 오늘(KST)이 포함된 페이지를 먼저 보여줌
+  let currentPage = (() => {
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+    const [ty, tm] = todayStr.split('-').map(Number);
+    const idx = MONTHS.findIndex(m => m.year === ty && m.month === tm);
+    return idx === -1 ? 0 : Math.floor(idx / MONTHS_PER_PAGE);
+  })();
+
+  // ── 카테고리 필터 (범례 칩 클릭으로 토글, 아무것도 선택 안 하면 전체 표시) ──
+  const activeCategories = new Set();
+  function categoryVisible(cat) { return activeCategories.size === 0 || activeCategories.has(cat); }
+
+  function renderCategoryLegend() {
+    const el = document.getElementById('schedCategoryLegend');
+    el.innerHTML = Object.entries(CATEGORY_META).map(([key, meta]) => {
+      const inactive = activeCategories.size > 0 && !activeCategories.has(key);
+      return `<span class="sched-cat-chip${inactive ? ' inactive' : ''}" data-category="${key}"><span class="dot" style="background:${meta.color}"></span>${meta.label}</span>`;
+    }).join('') + (activeCategories.size > 0
+      ? '<span class="sched-cat-chip" data-category="__all">✕ 전체 보기</span>' : '');
+  }
+
+  document.getElementById('schedCategoryLegend').addEventListener('click', e => {
+    const chip = e.target.closest('.sched-cat-chip');
+    if (!chip) return;
+    const cat = chip.dataset.category;
+    if (cat === '__all') activeCategories.clear();
+    else if (activeCategories.has(cat)) activeCategories.delete(cat);
+    else activeCategories.add(cat);
+    renderScheduleCalendars();
+    renderScheduleDetailTable();
+    highlightToday();
+  });
+
+  // 일정이 많은 날짜 셀은 접어두고 "+N개 더보기"로 표시
+  const expandedCells = new Set();
+  const MAX_BADGES_PER_CELL = 5;
 
   function monthContainerId(year, month) {
     return `cal-${year}-${String(month).padStart(2, '0')}`;
@@ -1043,6 +1151,9 @@
       `${page[0].year}년 ${page.map(({ month }) => `${month}월`).join(' - ')}`;
     document.getElementById('schedPrev').disabled = currentPage === 0;
     document.getElementById('schedNext').disabled = currentPage === pages.length - 1;
+
+    renderCategoryLegend();
+    renderTodaySummary();
   }
 
   document.getElementById('schedPrev').addEventListener('click', () => {
@@ -1071,14 +1182,25 @@
       const weekday = (firstWeekday + day - 1) % 7;
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const numClass = weekday === 0 ? ' sched-sun-num' : weekday === 6 ? ' sched-sat-num' : '';
-      const badges = allEvents().filter(e => e.date === dateStr).map(e => {
+      const dayEvents = allEvents().filter(e => e.date === dateStr && categoryVisible(e.category));
+      const expanded = expandedCells.has(dateStr);
+      const visibleEvents = (!expanded && dayEvents.length > MAX_BADGES_PER_CELL)
+        ? dayEvents.slice(0, MAX_BADGES_PER_CELL - 1)
+        : dayEvents;
+      let badges = visibleEvents.map(e => {
         const meta = CATEGORY_META[e.category];
         const key = eventKey(e);
         const doneClass = doneSet.has(key) ? ' sched-badge-done' : '';
+        const tooltip = escapeAttr(badgeTooltip(e));
         return e.url
-          ? `<a class="sched-badge${doneClass}" style="background:${meta.color}" href="${e.url}" target="_blank" rel="noopener" draggable="true" data-event-key="${escapeAttr(key)}">${e.title}</a>`
-          : `<span class="sched-badge sched-badge-plain${doneClass}" style="background:${meta.color}" draggable="true" data-event-key="${escapeAttr(key)}">${e.title}</span>`;
+          ? `<a class="sched-badge${doneClass}" style="background:${meta.color}" href="${e.url}" target="_blank" rel="noopener" draggable="true" data-event-key="${escapeAttr(key)}" title="${tooltip}">${e.title}</a>`
+          : `<span class="sched-badge sched-badge-plain${doneClass}" style="background:${meta.color}" draggable="true" data-event-key="${escapeAttr(key)}" title="${tooltip}">${e.title}</span>`;
       }).join('');
+      if (dayEvents.length > visibleEvents.length) {
+        badges += `<button type="button" class="sched-more-btn" data-date="${dateStr}">+${dayEvents.length - visibleEvents.length}개 더보기</button>`;
+      } else if (expanded && dayEvents.length > MAX_BADGES_PER_CELL) {
+        badges += `<button type="button" class="sched-more-btn" data-date="${dateStr}">접기</button>`;
+      }
       const maintTag = MAINTENANCE_DATES.has(dateStr) ? '<span class="sched-maint-tag" title="정기점검">점검</span>' : '';
       html += `<td data-date="${dateStr}"><div class="sched-daynum-row"><span class="sched-daynum${numClass}">${day}</span><button type="button" class="sched-add-btn" data-date="${dateStr}" title="이 날짜에 기록 추가">+</button></div>${maintTag}${badges}</td>`;
       if (weekday === 6 && day !== totalDays) html += '</tr><tr>';
@@ -1107,7 +1229,7 @@
 
   function renderScheduleDetailTable() {
     const tbody = document.getElementById('scheduleDetailBody');
-    const sorted = allEvents().sort((a, b) => a.date.localeCompare(b.date));
+    const sorted = allEvents().filter(e => categoryVisible(e.category)).sort((a, b) => a.date.localeCompare(b.date));
     tbody.innerHTML = sorted.map(e => {
       const meta = CATEGORY_META[e.category];
       const key = eventKey(e);
@@ -1169,6 +1291,61 @@
       cell.appendChild(tag);
     }
   }
+
+  // ── 배지 툴팁: 제목/상세 + "HH:MM UTC" 패턴이 있으면 KST 환산 추가 ──
+  function badgeTooltip(e) {
+    const base = e.detail ? `${e.title}\n${e.detail}` : e.title;
+    const m = `${e.title} ${e.detail || ''}`.match(/(\d{1,2}):(\d{2})\s*UTC/);
+    if (!m) return base;
+    let h = parseInt(m[1], 10) + 9;
+    const nextDay = h >= 24;
+    if (nextDay) h -= 24;
+    return `${base}\n⏰ KST ${nextDay ? '다음날 ' : ''}${String(h).padStart(2, '0')}:${m[2]}`;
+  }
+
+  // ── 오늘 & 다가오는 7일 요약 카드 ──────────────────────────
+  function addDaysToDateStr(dateStr, days) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+  }
+
+  function renderTodaySummary() {
+    const el = document.getElementById('todaySummary');
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+    const endStr = addDaysToDateStr(todayStr, 7);
+    const upcoming = allEvents()
+      .filter(e => e.date >= todayStr && e.date <= endStr && categoryVisible(e.category))
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const rows = upcoming.map(e => {
+      const meta = CATEGORY_META[e.category];
+      const key = eventKey(e);
+      const isToday = e.date === todayStr;
+      const done = doneSet.has(key);
+      return `<div class="sched-summary-row" data-event-key="${escapeAttr(key)}">
+        <span class="sched-summary-date${isToday ? ' is-today' : ''}">${isToday ? '오늘' : formatDateLabel(e.date)}</span>
+        <span class="tag" style="background:${meta.color}">${meta.label}</span>
+        <span class="sched-summary-title${done ? ' done' : ''}">${escapeHtml(e.title)}</span>
+      </div>`;
+    }).join('');
+    const nextMaint = [...MAINTENANCE_DATES].sort().find(dd => dd >= todayStr);
+    const maintLine = nextMaint ? `<div class="sched-summary-maint">🔧 다음 정기점검: ${formatDateLabel(nextMaint)}</div>` : '';
+    el.innerHTML = (rows || '<div class="sched-summary-empty">앞으로 7일 내 일정이 없습니다.</div>') + maintLine;
+  }
+
+  document.getElementById('todaySummary').addEventListener('click', e => {
+    const row = e.target.closest('.sched-summary-row');
+    if (row) openEventDetailModal(row.dataset.eventKey);
+  });
+
+  // ── "+N개 더보기 / 접기" 버튼: 해당 날짜 셀을 펼치거나 접음 ──
+  document.getElementById('scheduleCalendars').addEventListener('click', e => {
+    const btn = e.target.closest('.sched-more-btn');
+    if (!btn) return;
+    const date = btn.dataset.date;
+    if (expandedCells.has(date)) expandedCells.delete(date); else expandedCells.add(date);
+    renderScheduleCalendars();
+    highlightToday();
+  });
 
   // ── 달력 셀에서 바로 기록 추가 (날짜 위에 마우스를 올리면 나오는 + 버튼) ──
   document.getElementById('scheduleCalendars').addEventListener('click', e => {
@@ -1420,6 +1597,105 @@
   renderScheduleDetailTable();
   renderTaskList();
   highlightToday();
+
+  // ── 백업 내보내기/가져오기 (localStorage에만 있는 데이터의 유실·기기 이동 대비) ──
+  function downloadFile(filename, content, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  document.getElementById('backupExportBtn').addEventListener('click', () => {
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+    const data = {
+      format: 'bdo-console-schedule-backup',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      done: [...doneSet],
+      customEvents,
+      customTasks,
+      eventEdits,
+      taskEdits,
+    };
+    downloadFile(`bdo-schedule-backup-${todayStr}.json`, JSON.stringify(data, null, 2), 'application/json');
+  });
+
+  document.getElementById('backupImportBtn').addEventListener('click', () => {
+    document.getElementById('backupImportInput').click();
+  });
+
+  document.getElementById('backupImportInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let data;
+      try { data = JSON.parse(reader.result); } catch { alert('JSON 파일을 읽을 수 없습니다.'); return; }
+      if (!data || data.format !== 'bdo-console-schedule-backup') { alert('이 도구의 백업 파일이 아닙니다.'); return; }
+      if (!confirm('백업 파일의 내용(완료 체크·직접 추가한 일정/업무·수정 내역)을 현재 데이터와 합칩니다.\n계속할까요?')) return;
+      (data.done || []).forEach(k => doneSet.add(k));
+      const existingEventIds = new Set(customEvents.map(ev => ev.id));
+      (data.customEvents || []).forEach(ev => { if (ev && ev.id && !existingEventIds.has(ev.id)) customEvents.push(ev); });
+      const existingTaskIds = new Set(customTasks.map(t => t.id));
+      (data.customTasks || []).forEach(t => { if (t && t.id && !existingTaskIds.has(t.id)) customTasks.push(t); });
+      Object.assign(eventEdits, data.eventEdits || {});
+      Object.assign(taskEdits, data.taskEdits || {});
+      saveDoneSet(doneSet);
+      saveCustomEvents(customEvents);
+      saveCustomTasks(customTasks);
+      saveEventEdits(eventEdits);
+      saveTaskEdits(taskEdits);
+      renderScheduleCalendars();
+      renderScheduleDetailTable();
+      renderTaskList();
+      highlightToday();
+      alert('백업을 불러왔습니다.');
+    };
+    reader.readAsText(file);
+  });
+
+  // ── 캘린더(.ics) 내보내기: 폰/구글 캘린더에 등록해서 알림 받기 ──
+  function icsEscape(text) {
+    return String(text).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  }
+  // RFC 5545 줄 접기 — 한글은 UTF-8 3바이트라 여유 있게 60자 단위로 접음
+  function icsFold(line) {
+    const chunks = [];
+    for (let i = 0; i < line.length; i += 60) chunks.push(line.slice(i, i + 60));
+    return chunks.join('\r\n ');
+  }
+  function icsHash(str) {
+    let h = 5381;
+    for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0;
+    return h.toString(16);
+  }
+
+  document.getElementById('icsExportBtn').addEventListener('click', () => {
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//bdo-console-schedule//KO', 'CALSCALE:GREGORIAN'];
+    allEvents().forEach(e => {
+      const date = e.date.replace(/-/g, '');
+      const desc = [e.detail, e.url].filter(Boolean).join('\n');
+      lines.push('BEGIN:VEVENT');
+      lines.push(`UID:${icsHash(eventKey(e))}-${date}@bdo-console-schedule`);
+      lines.push(`DTSTAMP:${stamp}`);
+      lines.push(`DTSTART;VALUE=DATE:${date}`);
+      lines.push(icsFold(`SUMMARY:${icsEscape(`[${CATEGORY_META[e.category].label}] ${e.title}`)}`));
+      if (desc) lines.push(icsFold(`DESCRIPTION:${icsEscape(desc)}`));
+      // 당일 09:00(현지 시각)에 알림
+      lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:일정 알림', 'TRIGGER:PT9H', 'END:VALARM');
+      lines.push('END:VEVENT');
+    });
+    lines.push('END:VCALENDAR');
+    downloadFile('bdo-console-schedule.ics', lines.join('\r\n'), 'text/calendar;charset=utf-8');
+  });
 
   // ── Script definitions ─────────────────────────────────────
   const SCRIPTS = {
@@ -1777,9 +2053,28 @@
   }
 
   // ── Deploy info ────────────────────────────────────────────
-  const d = new Date(document.lastModified);
-  document.getElementById('deployInfo').textContent =
-    '최신 배포: ' + d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+  const deployInfoEl = document.getElementById('deployInfo');
+  const pageModified = new Date(document.lastModified);
+  deployInfoEl.textContent =
+    '최신 배포: ' + pageModified.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+
+  // GitHub의 최신 커밋과 비교해서 지금 보고 있는 페이지가 옛 버전이면 경고 표시
+  fetch('https://api.github.com/repos/rladntls94-tech/korean-checker/commits/main')
+    .then(r => (r.ok ? r.json() : null))
+    .then(c => {
+      if (!c || !c.commit) return;
+      deployInfoEl.textContent += ` · 최신 커밋 ${c.sha.slice(0, 7)}`;
+      const commitDate = new Date(c.commit.committer.date);
+      // Pages 배포 지연을 감안해 3분 이상 차이날 때만 경고
+      if (commitDate - pageModified > 3 * 60 * 1000) {
+        const warn = document.createElement('span');
+        warn.className = 'deploy-update-warn';
+        warn.textContent = '새 버전이 배포되었습니다 — 클릭해서 새로고침';
+        warn.addEventListener('click', () => location.reload());
+        deployInfoEl.appendChild(warn);
+      }
+    })
+    .catch(() => {});
 
   function escapeHtml(str) {
     return str
