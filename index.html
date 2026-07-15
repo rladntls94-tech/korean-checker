@@ -371,7 +371,7 @@
     .sched-search button:hover { color: #d32f2f; }
     .sched-search-count { font-size: 12px; color: #4f7ef8; font-weight: 600; }
     .sched-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .sched-toolbar button {
+    .sched-toolbar button, .sched-sync-btns button {
       border: 1px solid #d0d7e2;
       background: #fff;
       color: #445;
@@ -380,7 +380,13 @@
       border-radius: 6px;
       cursor: pointer;
     }
-    .sched-toolbar button:hover { background: #f0f4ff; border-color: #4f7ef8; color: #4f7ef8; }
+    .sched-toolbar button:hover, .sched-sync-btns button:hover { background: #f0f4ff; border-color: #4f7ef8; color: #4f7ef8; }
+    .sched-sync { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e7f0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+    .sched-sync-status { font-size: 12px; color: #667; font-weight: 600; }
+    .sched-sync-status[data-state="ok"] { color: #2e7d32; }
+    .sched-sync-status[data-state="error"] { color: #d32f2f; }
+    .sched-sync-status[data-state="saving"], .sched-sync-status[data-state="connecting"] { color: #4f7ef8; }
+    .sched-sync-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
     .sched-summary-row {
       display: flex;
       align-items: baseline;
@@ -683,6 +689,15 @@
         <input type="file" id="backupImportInput" accept=".json,application/json" style="display:none;">
         <button type="button" id="icsExportBtn">📅 캘린더(.ics) 내보내기</button>
       </div>
+      <!-- GitHub Gist를 이용한 기기 간 자동 동기화 (토큰은 이 브라우저에만 저장, 공개 repo에 노출 안 됨) -->
+      <div class="sched-sync">
+        <span class="sched-sync-status" id="syncStatus" data-state="off">☁ 기기 간 동기화: 꺼짐</span>
+        <div class="sched-sync-btns">
+          <button type="button" id="syncConnectBtn">☁ 동기화 연결</button>
+          <button type="button" id="syncNowBtn" style="display:none;">🔄 지금 동기화</button>
+          <button type="button" id="syncDisconnectBtn" style="display:none;">연결 해제</button>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -825,7 +840,7 @@
     try { return new Set(JSON.parse(localStorage.getItem(DONE_STORAGE_KEY) || '[]')); }
     catch { return new Set(); }
   }
-  function saveDoneSet(set) { localStorage.setItem(DONE_STORAGE_KEY, JSON.stringify([...set])); }
+  function saveDoneSet(set) { localStorage.setItem(DONE_STORAGE_KEY, JSON.stringify([...set])); onLocalDataChanged(); }
   function eventKey(e) { return e.custom ? `custom__${e.id}` : (e._key || `${e.date}__${e.title}`); }
   function escapeAttr(str) { return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
 
@@ -842,25 +857,25 @@
     try { return JSON.parse(localStorage.getItem(CUSTOM_EVENTS_KEY) || '[]'); }
     catch { return []; }
   }
-  function saveCustomEvents(list) { localStorage.setItem(CUSTOM_EVENTS_KEY, JSON.stringify(list)); }
+  function saveCustomEvents(list) { localStorage.setItem(CUSTOM_EVENTS_KEY, JSON.stringify(list)); onLocalDataChanged(); }
 
   function loadCustomTasks() {
     try { return JSON.parse(localStorage.getItem(CUSTOM_TASKS_KEY) || '[]'); }
     catch { return []; }
   }
-  function saveCustomTasks(list) { localStorage.setItem(CUSTOM_TASKS_KEY, JSON.stringify(list)); }
+  function saveCustomTasks(list) { localStorage.setItem(CUSTOM_TASKS_KEY, JSON.stringify(list)); onLocalDataChanged(); }
 
   function loadEventEdits() {
     try { return JSON.parse(localStorage.getItem(EVENT_EDITS_KEY) || '{}'); }
     catch { return {}; }
   }
-  function saveEventEdits(obj) { localStorage.setItem(EVENT_EDITS_KEY, JSON.stringify(obj)); }
+  function saveEventEdits(obj) { localStorage.setItem(EVENT_EDITS_KEY, JSON.stringify(obj)); onLocalDataChanged(); }
 
   function loadTaskEdits() {
     try { return JSON.parse(localStorage.getItem(TASK_EDITS_KEY) || '{}'); }
     catch { return {}; }
   }
-  function saveTaskEdits(obj) { localStorage.setItem(TASK_EDITS_KEY, JSON.stringify(obj)); }
+  function saveTaskEdits(obj) { localStorage.setItem(TASK_EDITS_KEY, JSON.stringify(obj)); onLocalDataChanged(); }
 
   let customEvents = loadCustomEvents();
   let customTasks = loadCustomTasks();
@@ -1742,6 +1757,267 @@
     lines.push('END:VCALENDAR');
     downloadFile('bdo-console-schedule.ics', lines.join('\r\n'), 'text/calendar;charset=utf-8');
   });
+
+  // ── 기기 간 자동 동기화 (GitHub Gist) ───────────────────────────
+  // 완료 체크·직접 추가/수정한 데이터를 개인(secret) Gist에 저장해 여러 기기에서 공유한다.
+  // GitHub 토큰은 이 브라우저의 localStorage에만 저장되며 공개 repo/페이지에는 절대 포함되지 않는다.
+  const SYNC_TOKEN_KEY = 'bdo-sync-github-token';
+  const SYNC_GIST_KEY  = 'bdo-sync-gist-id';
+  const SYNC_UPDATED_KEY = 'bdo-sync-updated-at';
+  const GIST_FILENAME = 'bdo-console-schedule-sync.json';
+  const GIST_DESCRIPTION = 'BDO 콘솔 일정 동기화 데이터 (자동 생성 · 수정하지 마세요)';
+
+  const syncStatusEl = document.getElementById('syncStatus');
+  const syncConnectBtn = document.getElementById('syncConnectBtn');
+  const syncNowBtn = document.getElementById('syncNowBtn');
+  const syncDisconnectBtn = document.getElementById('syncDisconnectBtn');
+
+  function isSyncConnected() { return !!localStorage.getItem(SYNC_TOKEN_KEY); }
+
+  function setSyncStatus(state, err) {
+    const now = new Date().toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul' });
+    const map = {
+      off:        '☁ 기기 간 동기화: 꺼짐',
+      idle:       '☁ 동기화 준비됨',
+      connecting: '☁ 연결 중…',
+      saving:     '☁ 저장 중…',
+      ok:         '✓ 동기화됨 · ' + now,
+      error:      '⚠ 동기화 오류' + (err && err.status ? ' (HTTP ' + err.status + ')' : ''),
+    };
+    syncStatusEl.textContent = map[state] || map.off;
+    syncStatusEl.dataset.state = state;
+  }
+
+  function updateSyncUI() {
+    const connected = isSyncConnected();
+    syncConnectBtn.style.display = connected ? 'none' : '';
+    syncNowBtn.style.display = connected ? '' : 'none';
+    syncDisconnectBtn.style.display = connected ? '' : 'none';
+    if (!connected) setSyncStatus('off');
+  }
+
+  // 로컬 데이터가 바뀔 때마다 호출됨(각 save* 함수 끝) — 타임스탬프 갱신 + 자동 업로드 예약
+  function onLocalDataChanged() {
+    localStorage.setItem(SYNC_UPDATED_KEY, String(Date.now()));
+    schedulePush();
+  }
+
+  function collectSyncData() {
+    return {
+      format: 'bdo-console-schedule-backup',
+      version: 1,
+      updatedAt: Number(localStorage.getItem(SYNC_UPDATED_KEY) || 0),
+      done: [...doneSet],
+      customEvents,
+      customTasks,
+      eventEdits,
+      taskEdits,
+    };
+  }
+
+  function persistAllLocal() {
+    localStorage.setItem(DONE_STORAGE_KEY, JSON.stringify([...doneSet]));
+    localStorage.setItem(CUSTOM_EVENTS_KEY, JSON.stringify(customEvents));
+    localStorage.setItem(CUSTOM_TASKS_KEY, JSON.stringify(customTasks));
+    localStorage.setItem(EVENT_EDITS_KEY, JSON.stringify(eventEdits));
+    localStorage.setItem(TASK_EDITS_KEY, JSON.stringify(taskEdits));
+  }
+
+  function rerenderAll() {
+    renderScheduleCalendars();
+    renderScheduleDetailTable();
+    renderTaskList();
+    highlightToday();
+  }
+
+  // 원격 데이터로 로컬을 통째로 교체(save*를 거치지 않아 재업로드 루프가 생기지 않음)
+  function applySyncData(data) {
+    doneSet = new Set(Array.isArray(data.done) ? data.done : []);
+    customEvents = Array.isArray(data.customEvents) ? data.customEvents : [];
+    customTasks = Array.isArray(data.customTasks) ? data.customTasks : [];
+    eventEdits = (data.eventEdits && typeof data.eventEdits === 'object') ? data.eventEdits : {};
+    taskEdits  = (data.taskEdits && typeof data.taskEdits === 'object') ? data.taskEdits : {};
+    persistAllLocal();
+    localStorage.setItem(SYNC_UPDATED_KEY, String(Number(data.updatedAt) || Date.now()));
+    rerenderAll();
+  }
+
+  // 최초 연결 시에만 사용: 로컬과 원격을 합쳐(union) 어느 쪽 데이터도 잃지 않게 함
+  function mergeRemoteIntoLocal(remote) {
+    if (!remote) return;
+    (remote.done || []).forEach(k => doneSet.add(k));
+    const evIds = new Set(customEvents.map(e => e.id));
+    (remote.customEvents || []).forEach(e => { if (e && e.id && !evIds.has(e.id)) customEvents.push(e); });
+    const tkIds = new Set(customTasks.map(t => t.id));
+    (remote.customTasks || []).forEach(t => { if (t && t.id && !tkIds.has(t.id)) customTasks.push(t); });
+    Object.assign(eventEdits, remote.eventEdits || {});
+    Object.assign(taskEdits, remote.taskEdits || {});
+  }
+
+  async function gistApi(path, options) {
+    const token = localStorage.getItem(SYNC_TOKEN_KEY);
+    const res = await fetch('https://api.github.com' + path, {
+      ...(options || {}),
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        ...((options && options.headers) || {}),
+      },
+    });
+    if (!res.ok) { const e = new Error('GitHub API ' + res.status); e.status = res.status; throw e; }
+    return res.json();
+  }
+
+  async function findGistId() {
+    const gists = await gistApi('/gists?per_page=100', { method: 'GET' });
+    const found = gists.find(g => g.files && g.files[GIST_FILENAME]);
+    return found ? found.id : null;
+  }
+
+  async function createGist() {
+    const g = await gistApi('/gists', {
+      method: 'POST',
+      body: JSON.stringify({
+        description: GIST_DESCRIPTION,
+        public: false,
+        files: { [GIST_FILENAME]: { content: JSON.stringify(collectSyncData(), null, 2) } },
+      }),
+    });
+    return g.id;
+  }
+
+  async function pullFromGist() {
+    const gistId = localStorage.getItem(SYNC_GIST_KEY);
+    if (!gistId) return null;
+    const g = await gistApi('/gists/' + gistId, { method: 'GET' });
+    const file = g.files && g.files[GIST_FILENAME];
+    if (!file) return null;
+    let content = file.content;
+    if (file.truncated && file.raw_url) content = await fetch(file.raw_url).then(r => r.text());
+    try { return JSON.parse(content); } catch { return null; }
+  }
+
+  async function pushToGist() {
+    const gistId = localStorage.getItem(SYNC_GIST_KEY);
+    if (!gistId) return;
+    await gistApi('/gists/' + gistId, {
+      method: 'PATCH',
+      body: JSON.stringify({ files: { [GIST_FILENAME]: { content: JSON.stringify(collectSyncData(), null, 2) } } }),
+    });
+  }
+
+  // 로컬/원격 중 더 최근(updatedAt) 것을 채택 — 체크 해제·삭제도 정상 반영됨
+  async function reconcile(remote) {
+    const localTs = Number(localStorage.getItem(SYNC_UPDATED_KEY) || 0);
+    const remoteTs = remote ? Number(remote.updatedAt || 0) : -1;
+    if (remote && remoteTs > localTs) applySyncData(remote);
+    else if (localTs > remoteTs) await pushToGist();
+  }
+
+  let pushTimer = null;
+  let pushing = false;
+  function schedulePush() {
+    if (!isSyncConnected() || !localStorage.getItem(SYNC_GIST_KEY)) return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(runPush, 1500);
+  }
+  async function runPush() {
+    if (!isSyncConnected() || !localStorage.getItem(SYNC_GIST_KEY)) return;
+    if (pushing) { schedulePush(); return; }
+    pushing = true;
+    setSyncStatus('saving');
+    try { await pushToGist(); setSyncStatus('ok'); }
+    catch (e) { setSyncStatus('error', e); }
+    finally { pushing = false; }
+  }
+
+  async function connectSync() {
+    const token = prompt(
+      'GitHub 토큰을 붙여넣으세요.\n\n' +
+      '① github.com/settings/tokens/new 접속\n' +
+      '② Note 아무거나 입력, 만료일 선택\n' +
+      '③ 권한 중 "gist"만 체크 → Generate token\n' +
+      '④ 생성된 토큰(ghp_...)을 복사해 여기 붙여넣기\n\n' +
+      '※ 토큰은 이 브라우저에만 저장되고 공개되지 않습니다.'
+    );
+    if (!token) return;
+    localStorage.setItem(SYNC_TOKEN_KEY, token.trim());
+    setSyncStatus('connecting');
+    try {
+      let gistId = localStorage.getItem(SYNC_GIST_KEY) || await findGistId();
+      if (gistId) {
+        localStorage.setItem(SYNC_GIST_KEY, gistId);
+        // 기존 Gist가 있으면 최초 연결에서는 로컬과 합쳐서 양쪽 데이터를 모두 보존
+        const remote = await pullFromGist();
+        mergeRemoteIntoLocal(remote);
+        persistAllLocal();
+        localStorage.setItem(SYNC_UPDATED_KEY, String(Date.now()));
+        rerenderAll();
+        await pushToGist();
+      } else {
+        // Gist가 없으면 현재 로컬 데이터로 새로 생성
+        localStorage.setItem(SYNC_UPDATED_KEY, String(Date.now()));
+        gistId = await createGist();
+        localStorage.setItem(SYNC_GIST_KEY, gistId);
+      }
+      updateSyncUI();
+      setSyncStatus('ok');
+      alert('동기화가 연결되었습니다.\n다른 기기에서도 같은 GitHub 계정 토큰으로 "동기화 연결"을 누르면 데이터가 자동으로 맞춰집니다.');
+    } catch (e) {
+      setSyncStatus('error', e);
+      localStorage.removeItem(SYNC_TOKEN_KEY);
+      updateSyncUI();
+      if (e.status === 401) alert('토큰이 올바르지 않거나 gist 권한이 없습니다. 다시 확인해 주세요.');
+      else alert('연결에 실패했습니다: ' + e.message);
+    }
+  }
+
+  async function syncNow() {
+    if (!isSyncConnected()) return;
+    setSyncStatus('connecting');
+    try {
+      let gistId = localStorage.getItem(SYNC_GIST_KEY) || await findGistId();
+      if (gistId) localStorage.setItem(SYNC_GIST_KEY, gistId);
+      const remote = await pullFromGist();
+      await reconcile(remote);
+      setSyncStatus('ok');
+    } catch (e) { setSyncStatus('error', e); }
+  }
+
+  function disconnectSync() {
+    if (!confirm('이 기기에서 동기화를 끊습니다.\n(로컬 데이터는 그대로 유지되고, 저장된 GitHub 토큰만 이 브라우저에서 삭제됩니다.)')) return;
+    localStorage.removeItem(SYNC_TOKEN_KEY);
+    localStorage.removeItem(SYNC_GIST_KEY);
+    updateSyncUI();
+  }
+
+  async function bootstrapSync() {
+    updateSyncUI();
+    if (!isSyncConnected()) return;
+    setSyncStatus('connecting');
+    try {
+      let gistId = localStorage.getItem(SYNC_GIST_KEY) || await findGistId();
+      if (!gistId) { setSyncStatus('idle'); return; }
+      localStorage.setItem(SYNC_GIST_KEY, gistId);
+      const remote = await pullFromGist();
+      await reconcile(remote);
+      setSyncStatus('ok');
+    } catch (e) { setSyncStatus('error', e); }
+  }
+
+  syncConnectBtn.addEventListener('click', connectSync);
+  syncNowBtn.addEventListener('click', syncNow);
+  syncDisconnectBtn.addEventListener('click', disconnectSync);
+
+  // 탭이 열려 있는 동안 다른 기기의 변경을 주기적으로 반영(60초, 화면 보일 때만)
+  setInterval(() => {
+    if (document.visibilityState === 'visible' && isSyncConnected() && !pushing) {
+      pullFromGist().then(reconcile).catch(() => {});
+    }
+  }, 60000);
+
+  bootstrapSync();
 
   // ── Script definitions ─────────────────────────────────────
   const SCRIPTS = {
