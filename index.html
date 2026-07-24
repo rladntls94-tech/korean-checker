@@ -10,21 +10,12 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root{
-      --solare:#4A90D9;
-      --taming:#4CAF50;
-      --node:#FF9800;
-      --pass:#9C27B0;
-      --anniv:#E91E63;
-      --guild:#00BCD4;
-      --community:#795548;
-      --privacy:#607D8B;
-      --heidel:#00695C;
-      --coupon:#3949AB;
-      --academy:#827717;
-      --bug:#D32F2F;
-      --gmevent:#E64A19;
-      --redwar:#B71C1C;
-      --dspass:#5E35B1;
+      --event:#4f7ef8;
+      --pearl:#8E24AA;
+      --update:#2E7D32;
+      --ops:#E64A19;
+      --issue:#D32F2F;
+      --etc:#607D8B;
     }
 
     body {
@@ -815,23 +806,15 @@
   // 새 일정을 추가할 때는 이 배열에 한 줄만 추가하면 캘린더와
   // 상세 목록 표가 모두 자동으로 갱신됩니다.
   const CATEGORY_META = {
-    solare:    { label: '솔라레',   color: 'var(--solare)' },
-    taming:    { label: '조련',     color: 'var(--taming)' },
-    node:      { label: '거점전',   color: 'var(--node)' },
-    pass:      { label: '사냥패스', color: 'var(--pass)' },
-    anniv:     { label: '4주년',    color: 'var(--anniv)' },
-    guild:     { label: '길드',     color: 'var(--guild)' },
-    community: { label: '커뮤니티', color: 'var(--community)' },
-    privacy:   { label: '개인정보', color: 'var(--privacy)' },
-    heidel:    { label: '하이델',   color: 'var(--heidel)' },
-    coupon:    { label: '7일쿠폰', color: 'var(--coupon)' },
-    academy:   { label: '아카데미', color: 'var(--academy)' },
-    bug:       { label: '버그',     color: 'var(--bug)' },
-    gmevent:   { label: 'GM이벤트', color: 'var(--gmevent)' },
-    redwar:    { label: '붉은전장', color: 'var(--redwar)' },
-    dspass:    { label: '스페셜패스', color: 'var(--dspass)' },
-    custom:    { label: '기타',     color: '#9E9E9E' },
+    event:  { label: '이벤트',   color: 'var(--event)' },
+    pearl:  { label: '펄상점',   color: 'var(--pearl)' },
+    update: { label: '업데이트', color: 'var(--update)' },
+    ops:    { label: '운영',     color: 'var(--ops)' },
+    issue:  { label: '이슈',     color: 'var(--issue)' },
+    etc:    { label: '기타',     color: 'var(--etc)' },
   };
+  // 알 수 없는(이전 버전에서 저장된) 카테고리는 '기타'로 안전 처리
+  function metaFor(cat) { return CATEGORY_META[cat] || CATEGORY_META.etc; }
 
   // ── Done-state (체크한 항목은 브라우저에 저장되어 새로고침해도 유지됨) ──
   const DONE_STORAGE_KEY = 'bdo-console-schedule-done';
@@ -986,179 +969,179 @@
   const PRIVACY_SLACK_THREAD = 'https://pearlabyss-op.slack.com/archives/GALFJM3DJ/p1782881689413629?thread_ts=1782753159.496199&cid=GALFJM3DJ';
 
   const EVENTS = [
-    { date: '2026-07-01', category: 'anniv',     title: '일일접속보상 시작', url: PEARL_NOTICE(13356) },
-    { date: '2026-07-01', category: 'privacy',   title: '개인정보처리방침 개정 안내 공지 오픈', url: PRIVACY_SLACK_THREAD },
-    { date: '2026-07-02', category: 'solare',    title: '솔라레 이벤트의뢰 종료', url: PEARL_NOTICE(13300) },
-    { date: '2026-07-02', category: 'solare',    title: '솔라레 패스 판매종료', url: PEARL_NOTICE(13299) },
-    { date: '2026-07-06', category: 'custom',    title: '연우님과 PERS 관련 확인',
+    { date: '2026-07-01', category: 'event',     title: '일일접속보상 시작', url: PEARL_NOTICE(13356) },
+    { date: '2026-07-01', category: 'etc',       title: '개인정보처리방침 개정 안내 공지 오픈', url: PRIVACY_SLACK_THREAD },
+    { date: '2026-07-02', category: 'event',     title: '솔라레 이벤트의뢰 종료', url: PEARL_NOTICE(13300) },
+    { date: '2026-07-02', category: 'event',     title: '솔라레 패스 판매종료', url: PEARL_NOTICE(13299) },
+    { date: '2026-07-06', category: 'ops',       title: '연우님과 PERS 관련 확인',
       detail: '붉은사막에 있는 PERS 시스템을 콘솔에서 활용할 수 없을지 확인' },
-    { date: '2026-07-06', category: 'solare',    title: '패치노트 안내 내용 관련해서 논의',
+    { date: '2026-07-06', category: 'event',     title: '패치노트 안내 내용 관련해서 논의',
       detail: '솔라레 시즌 피날레 특별전 "우당탕탕 협동 대전"(7/23 업데이트) 패치노트 안내 내용 관련 논의' },
-    { date: '2026-07-07', category: 'guild',     title: '길드박람회 카드 최종마감(23:59)', url: PEARL_NOTICE(13306),
+    { date: '2026-07-07', category: 'event',     title: '길드박람회 카드 최종마감(23:59)', url: PEARL_NOTICE(13306),
       detail: '길드 박람회 소개카드 최종 제출 마감(23:59 UTC, 디스코드 guild-card 채널)' },
-    { date: '2026-07-08', category: 'guild',     title: '길드가입 이벤트 종료(23:59)', url: PEARL_NOTICE(13302) },
-    { date: '2026-07-08', category: 'privacy',   title: '개인정보처리방침 개정 갱신', url: PRIVACY_SLACK_THREAD },
-    { date: '2026-07-09', category: 'taming',    title: '조련지원품 종료', url: PEARL_NOTICE(13354) },
-    { date: '2026-07-09', category: 'solare',    title: '솔라레 패스 보상수령종료', url: PEARL_NOTICE(13299) },
-    { date: '2026-07-09', category: 'solare',    title: '솔라레 시즌 종료', url: PEARL_NOTICE(13204),
+    { date: '2026-07-08', category: 'event',     title: '길드가입 이벤트 종료(23:59)', url: PEARL_NOTICE(13302) },
+    { date: '2026-07-08', category: 'etc',       title: '개인정보처리방침 개정 갱신', url: PRIVACY_SLACK_THREAD },
+    { date: '2026-07-09', category: 'event',     title: '조련지원품 종료', url: PEARL_NOTICE(13354) },
+    { date: '2026-07-09', category: 'event',     title: '솔라레 패스 보상수령종료', url: PEARL_NOTICE(13299) },
+    { date: '2026-07-09', category: 'event',     title: '솔라레 시즌 종료', url: PEARL_NOTICE(13204),
       detail: '솔라레의 창 랭크전 시즌(5/14~) 종료' },
-    { date: '2026-07-09', category: 'heidel',    title: '하이델 이벤트 응모판 링크 등록', url: PEARL_NOTICE(13383),
+    { date: '2026-07-09', category: 'event',     title: '하이델 이벤트 응모판 링크 등록', url: PEARL_NOTICE(13383),
       detail: '하이델 이벤트 응모판 UI "자세히 보기" 버튼에 연결할 라이브 이벤트 페이지 URL 생성 후 전달 필요. 응모판 이벤트 안내 시 사전에 파둔 링크 슬롯에 실제 URL을 등록해야 함 (Slack 요청 기준).' },
-    { date: '2026-07-09', category: 'guild',     title: '길드박람회 1차 보상 지급(정기점검 시)',
+    { date: '2026-07-09', category: 'event',     title: '길드박람회 1차 보상 지급(정기점검 시)',
       detail: '서트에서 테스트 후 운영툴로 지급. 메뉴: OASIS > Mail > Item-Send > Item Send - Guild' },
-    { date: '2026-07-09', category: 'solare',    title: 'NA 라이브 쿼리패치 실행(14~15시, 필수)',
+    { date: '2026-07-09', category: 'event',     title: 'NA 라이브 쿼리패치 실행(14~15시, 필수)',
       detail: '7/9 14~15시 사이에 무조건 NA 라이브 쿼리패치 실행 필요 — NA 솔라레 랭킹에서 제외하는 처리' },
-    { date: '2026-07-10', category: 'guild',     title: '2차 길드박람회 개최', url: PEARL_NOTICE(13306),
+    { date: '2026-07-10', category: 'event',     title: '2차 길드박람회 개최', url: PEARL_NOTICE(13306),
       detail: '2차 길드 박람회 개최 (ASIA·EU 19:00 / NA 16:00)' },
-    { date: '2026-07-10', category: 'custom',    title: '202607 여름세일 공지 번역',
+    { date: '2026-07-10', category: 'ops',       title: '202607 여름세일 공지 번역',
       url: 'https://pearlabyss365-my.sharepoint.com/:w:/g/personal/jiji_lee_pearlabyss_com/IQBnGtoEb37eQZo9b51D5XANARmKLtxgE1RWIv9HJrDgsKw?e=2ZEb52',
       detail: '202607 여름세일 공지 번역 — 희망 일정: 7/10 퇴근하시기 전까지' },
-    { date: '2026-07-10', category: 'coupon',    title: '7일 쿠폰 이벤트 시작', url: 'https://pearlabyss-op.slack.com/archives/GSWL776PK/p1782874612449659?thread_ts=1782785046.820829&cid=GSWL776PK',
+    { date: '2026-07-10', category: 'event',     title: '7일 쿠폰 이벤트 시작', url: 'https://pearlabyss-op.slack.com/archives/GSWL776PK/p1782874612449659?thread_ts=1782785046.820829&cid=GSWL776PK',
       detail: '테르미안/연회 티징 ~ 사막의 빛 달성 이벤트 사이 공백 주간 접속 유도용 7일 쿠폰. 콘솔은 쿠폰 보상을 당일에만 수령 가능한 도전과제로 세팅 (쿠폰별 수령 가능 시간: 당일 00:00~23:59 UTC).' },
-    { date: '2026-07-13', category: 'gmevent',   title: '붉은전장 GM이벤트 (20:00~, 약 1시간)',
+    { date: '2026-07-13', category: 'event',     title: '붉은전장 GM이벤트 (20:00~, 약 1시간)',
       detail: '붉은전장 GM이벤트 1회차 — GM 2명이 폐성터 전장 참여. [ASIA] 20:00 GMT+9 / [NA] 4:00 PM PDT / [EU] 17:00 UTC, 약 1시간. 매칭 시작 전 월드 채팅 안내 필요. 함께 매치 완료한 유저에게 칭호 "GM과 친한(7일)" 참여 일자 내 지급.' },
-    { date: '2026-07-13', category: 'bug',       title: '아이템 가공 서버 덤프 현상 수정 후 동향 확인', url: 'https://pearlabyss-op.slack.com/archives/C5U4RG494/p1783066682711999',
+    { date: '2026-07-13', category: 'issue',     title: '아이템 가공 서버 덤프 현상 수정 후 동향 확인', url: 'https://pearlabyss-op.slack.com/archives/C5U4RG494/p1783066682711999',
       detail: '7/9 정기점검 이후 아이템 가공 시 서버 덤프 발생하는 현상 수정 완료 — 수정 이후 재발 여부 등 동향 확인' },
-    { date: '2026-07-15', category: 'gmevent',   title: '붉은전장 GM이벤트 (20:00~, 약 1시간)',
+    { date: '2026-07-15', category: 'event',     title: '붉은전장 GM이벤트 (20:00~, 약 1시간)',
       detail: '붉은전장 GM이벤트 2회차 — GM 2명이 폐성터 전장 참여. [ASIA] 20:00 GMT+9 / [NA] 4:00 PM PDT / [EU] 17:00 UTC, 약 1시간. 매칭 시작 전 월드 채팅 안내 필요. 함께 매치 완료한 유저에게 칭호 "GM과 친한(7일)" 참여 일자 내 지급.' },
-    { date: '2026-07-15', category: 'anniv',     title: '사막의빛 목표달성기한(23:59 UTC)', url: PEARL_NOTICE(13352),
+    { date: '2026-07-15', category: 'event',     title: '사막의빛 목표달성기한(23:59 UTC)', url: PEARL_NOTICE(13352),
       detail: '"사막의 빛" 전 세계 목표(8천만 개) 달성 기한(23:59 UTC) — 달성률에 따라 보상 단계 결정' },
-    { date: '2026-07-16', category: 'pass',      title: '사냥패스 판매종료(07:00 UTC)', url: PEARL_NOTICE(13353) },
-    { date: '2026-07-16', category: 'solare',    title: '솔라레 시즌 피날레 특별전 공지 준비(목표)',
+    { date: '2026-07-16', category: 'pearl',     title: '사냥패스 판매종료(07:00 UTC)', url: PEARL_NOTICE(13353) },
+    { date: '2026-07-16', category: 'event',     title: '솔라레 시즌 피날레 특별전 공지 준비(목표)',
       detail: '"솔라레 시즌 피날레 특별전: 우당탕탕 협동 대전" 관련 공지 준비 목표일 (7/23 업데이트 기준 일주일 전)' },
-    { date: '2026-07-09', category: 'academy',   title: '아카데미 2기 졸업일정 변경 사전 안내(공지 목표)',
+    { date: '2026-07-09', category: 'event',     title: '아카데미 2기 졸업일정 변경 사전 안내(공지 목표)',
       detail: '올비아 아카데미 2기 졸업 일정 변경 사전 안내 공지 목표일. 입학 종료 7/16→7/23(점검 전), 졸업 7/23→8/6으로 변경.' },
-    { date: '2026-07-17', category: 'coupon',    title: '7일 쿠폰 이벤트 종료(23:59 UTC)', url: 'https://pearlabyss-op.slack.com/archives/GSWL776PK/p1782874612449659?thread_ts=1782785046.820829&cid=GSWL776PK',
+    { date: '2026-07-17', category: 'event',     title: '7일 쿠폰 이벤트 종료(23:59 UTC)', url: 'https://pearlabyss-op.slack.com/archives/GSWL776PK/p1782874612449659?thread_ts=1782785046.820829&cid=GSWL776PK',
       detail: '7일 쿠폰 이벤트 기간 종료 (2026-07-10 00:00 ~ 07-17 23:59). 마지막 날 쿠폰도 당일 00:00~23:59 UTC 내에만 수령 가능.' },
-    { date: '2026-07-22', category: 'anniv',     title: '4주년 접속보상 종료', url: PEARL_NOTICE(13303) },
-    { date: '2026-07-23', category: 'solare',    title: '솔라레 시즌 피날레 특별전: 우당탕탕 협동 대전 업데이트',
+    { date: '2026-07-22', category: 'event',     title: '4주년 접속보상 종료', url: PEARL_NOTICE(13303) },
+    { date: '2026-07-23', category: 'event',     title: '솔라레 시즌 피날레 특별전: 우당탕탕 협동 대전 업데이트',
       detail: '솔라레 시즌 피날레 특별전 "우당탕탕 협동 대전" 업데이트' },
-    { date: '2026-07-23', category: 'node',      title: '거점전 지원 종료', url: PEARL_NOTICE(13355) },
-    { date: '2026-07-23', category: 'pass',      title: '사냥패스 보상수령종료', url: PEARL_NOTICE(13353) },
-    { date: '2026-07-23', category: 'anniv',     title: '사막의빛 종료 → 보너스 시작(목표 달성 확정)', url: PEARL_NOTICE(13352),
+    { date: '2026-07-23', category: 'event',     title: '거점전 지원 종료', url: PEARL_NOTICE(13355) },
+    { date: '2026-07-23', category: 'pearl',     title: '사냥패스 보상수령종료', url: PEARL_NOTICE(13353) },
+    { date: '2026-07-23', category: 'event',     title: '사막의빛 종료 → 보너스 시작(목표 달성 확정)', url: PEARL_NOTICE(13352),
       detail: '"사막의 빛" 이벤트 종료. 전 세계 목표 달성으로 보너스 이벤트(아침의 축복 2배·축복의 핫타임)가 8/6 정기점검 전까지 진행.' },
-    { date: '2026-07-23', category: 'guild',     title: '길드가입 칭호 삭제', url: PEARL_NOTICE(13302),
+    { date: '2026-07-23', category: 'event',     title: '길드가입 칭호 삭제', url: PEARL_NOTICE(13302),
       detail: '도전과제 칭호 "[칭호] 길드를 찾습니다" 삭제 예정' },
-    { date: '2026-07-23', category: 'academy',   title: '올비아 아카데미 2기 입학 종료(점검 전)', url: PEARL_NOTICE(13128),
+    { date: '2026-07-23', category: 'event',     title: '올비아 아카데미 2기 입학 종료(점검 전)', url: PEARL_NOTICE(13128),
       detail: '올비아 아카데미 2기 입학 종료 (변경: 기존 7/16 → 7/23 점검 전)' },
-    { date: '2026-08-06', category: 'academy',   title: '올비아 아카데미 2기 졸업', url: PEARL_NOTICE(13128),
+    { date: '2026-08-06', category: 'event',     title: '올비아 아카데미 2기 졸업', url: PEARL_NOTICE(13128),
       detail: '올비아 아카데미 2기 졸업 (변경: 기존 7/23 → 8/6)' },
-    { date: '2026-07-31', category: 'anniv',     title: '일일접속보상 종료(23:59 UTC)', url: PEARL_NOTICE(13356) },
-    { date: '2026-08-06', category: 'anniv',     title: '사막의빛 보너스이벤트 종료', url: PEARL_NOTICE(13352),
+    { date: '2026-07-31', category: 'event',     title: '일일접속보상 종료(23:59 UTC)', url: PEARL_NOTICE(13356) },
+    { date: '2026-08-06', category: 'event',     title: '사막의빛 보너스이벤트 종료', url: PEARL_NOTICE(13352),
       detail: '목표 달성 확정 — 보너스 이벤트(7/23~8/6, 아침의 축복 2배·축복의 핫타임)가 8/6 정기점검 전 종료.' },
-    { date: '2026-08-06', category: 'academy',   title: '올비아 아카데미 3기 진행 시작',
+    { date: '2026-08-06', category: 'event',     title: '올비아 아카데미 3기 진행 시작',
       detail: '올비아 아카데미 3기 진행 기간 시작 (8/6 정기점검 후 ~ 11/12 정기점검 전)' },
-    { date: '2026-11-12', category: 'academy',   title: '올비아 아카데미 3기 진행 종료',
+    { date: '2026-11-12', category: 'event',     title: '올비아 아카데미 3기 진행 종료',
       detail: '올비아 아카데미 3기 진행 기간 종료 (8/6 정기점검 후 ~ 11/12 정기점검 전)' },
-    { date: '2026-08-20', category: 'academy',   title: '올비아 아카데미 3기 조기 졸업 가능 시작',
+    { date: '2026-08-20', category: 'event',     title: '올비아 아카데미 3기 조기 졸업 가능 시작',
       url: 'https://pearlabyss-op.slack.com/archives/G5STPCPSM/p1783399481948979?thread_ts=1782873535.759139&cid=G5STPCPSM',
       detail: '오픈(8/6) 2주 후인 8/20부터 조기 졸업 진행 가능 — 콘솔 조기 졸업은 정기점검이 없는 주에 진행 (1·2기와 동일 방식)' },
-    { date: '2026-10-29', category: 'academy',   title: '올비아 아카데미 3기 입학 마감(정기점검 후)',
+    { date: '2026-10-29', category: 'event',     title: '올비아 아카데미 3기 입학 마감(정기점검 후)',
       url: 'https://pearlabyss-op.slack.com/archives/G5STPCPSM/p1783399481948979?thread_ts=1782873535.759139&cid=G5STPCPSM',
       detail: '종료(11/12) 2주 전인 10/29 정기점검 후부터 신규 입학 불가' },
-    { date: '2026-08-06', category: 'custom',    title: '보답의 인장 통합 공지 업데이트',
+    { date: '2026-08-06', category: 'ops',       title: '보답의 인장 통합 공지 업데이트',
       detail: '보답의 인장 통합 안내 공지 업데이트 (통합 적용은 9/3)' },
-    { date: '2026-09-03', category: 'custom',    title: '보답의 인장 통합 업데이트',
+    { date: '2026-09-03', category: 'update',    title: '보답의 인장 통합 업데이트',
       detail: '보답의 인장 통합 업데이트 적용 (사전 공지: 8/6)' },
-    { date: '2026-08-13', category: 'community', title: 'Gleam 캠페인 종료(17:00 UTC)', url: PEARL_NOTICE(13320) },
-    { date: '2026-08-13', category: 'community', title: '흑태자 기프트팩 종료(07:00 UTC)', url: PEARL_NOTICE(13324) },
+    { date: '2026-08-13', category: 'event',     title: 'Gleam 캠페인 종료(17:00 UTC)', url: PEARL_NOTICE(13320) },
+    { date: '2026-08-13', category: 'event',     title: '흑태자 기프트팩 종료(07:00 UTC)', url: PEARL_NOTICE(13324) },
     // ── 2026-07-09 점검 후 시작 이벤트 5종 ──
-    { date: '2026-07-09', category: 'heidel',    title: '모험을 새긴 인장 이벤트 시작(점검 후)',
+    { date: '2026-07-09', category: 'event',     title: '모험을 새긴 인장 이벤트 시작(점검 후)',
       detail: '하이델 축제의 서막! 모험을 새긴 인장 — 7/9 정기점검 후 ~ 8/6 정기점검 전. 인장으로 가문 교환(망치 상자·발크스 +200·고스피 등). 의뢰서 진행도 같은 기간.' },
-    { date: '2026-07-10', category: 'heidel',    title: '모험의 기록 매일접속 도전과제 시작(00:00 UTC)',
+    { date: '2026-07-10', category: 'event',     title: '모험의 기록 매일접속 도전과제 시작(00:00 UTC)',
       detail: '도전과제 기간: 7/10 00:00 ~ 7/29 23:59 UTC. 매일 접속 시 [이벤트] 모험의 기록 획득 → 분야별 의뢰 완료 시 인장 20개.' },
-    { date: '2026-07-29', category: 'heidel',    title: '모험의 기록 매일접속 도전과제 종료(23:59 UTC)',
+    { date: '2026-07-29', category: 'event',     title: '모험의 기록 매일접속 도전과제 종료(23:59 UTC)',
       detail: '인장 이벤트 자체(교환/의뢰)는 8/6 점검 전까지 계속.' },
-    { date: '2026-08-06', category: 'heidel',    title: '모험을 새긴 인장 이벤트 종료·일괄 삭제(점검 시)',
+    { date: '2026-08-06', category: 'event',     title: '모험을 새긴 인장 이벤트 종료·일괄 삭제(점검 시)',
       detail: '[이벤트] 모험의 기록 아이템, 진행 중 이벤트 의뢰, 소지 의뢰서, 전용 UI가 8/6 정기점검 시 일괄 삭제·종료.' },
-    { date: '2026-07-09', category: 'anniv',     title: '은화상점 이국의 기념품 판매 시작(점검 후)',
+    { date: '2026-07-09', category: 'event',     title: '은화상점 이국의 기념품 판매 시작(점검 후)',
       detail: '4주년 기념 은화 이벤트 상품 — 이국의 요리 9종(품목당 100만 은화, 주간 5회, 월요일 00:00 초기화) + 가구 10종(품목당 1만 은화, 가문 1회). 펄 상점-추천 상품-은화 이벤트 상품. ~7/23 점검 전.' },
-    { date: '2026-07-23', category: 'anniv',     title: '은화상점 이국의 기념품 판매 종료(점검 전)' },
-    { date: '2026-08-06', category: 'anniv',     title: '이국의 음식 아이템 일괄 삭제(점검 시)',
+    { date: '2026-07-23', category: 'event',     title: '은화상점 이국의 기념품 판매 종료(점검 전)' },
+    { date: '2026-08-06', category: 'event',     title: '이국의 음식 아이템 일괄 삭제(점검 시)',
       detail: '은화 이벤트 상점에서 구매한 이국의 음식 아이템은 8/6 정기점검 시 일괄 삭제 (판매 종료 7/23 이후 2주 뒤).' },
-    { date: '2026-07-09', category: 'anniv',     title: '파트리지오 상점 이벤트 시작(점검 후)',
+    { date: '2026-07-09', category: 'event',     title: '파트리지오 상점 이벤트 시작(점검 후)',
       detail: '4주년 기념 파트리지오 상점 라인업 강화 + 기운 소모 50→25 (50% 할인). 등장 시간: 월드시간 PM 10:00~AM 07:00. ~7/23 점검 전. 파트리지오 서버 <비밀의 만물상> 디파스토에는 미적용.' },
-    { date: '2026-07-23', category: 'anniv',     title: '파트리지오 상점 이벤트 종료(점검 전)' },
-    { date: '2026-07-09', category: 'dspass',    title: '데일리 스페셜 패스 판매 시작(점검 후)',
+    { date: '2026-07-23', category: 'event',     title: '파트리지오 상점 이벤트 종료(점검 전)' },
+    { date: '2026-07-09', category: 'pearl',     title: '데일리 스페셜 패스 판매 시작(점검 후)',
       detail: '엘리트 안경 데일리 스페셜 패스 (3,500펄). 판매: 7/9 점검 후 ~ 8/6 점검 전 / 보상 획득: ~8/20 점검 전. 매일 접속 기본 보상 + 구매 시 추가 보상(DAY 01~14).' },
-    { date: '2026-08-06', category: 'dspass',    title: '데일리 스페셜 패스 판매 종료(점검 전)' },
-    { date: '2026-08-20', category: 'dspass',    title: '데일리 스페셜 패스 보상 획득 종료(점검 전)',
+    { date: '2026-08-06', category: 'pearl',     title: '데일리 스페셜 패스 판매 종료(점검 전)' },
+    { date: '2026-08-20', category: 'pearl',     title: '데일리 스페셜 패스 보상 획득 종료(점검 전)',
       detail: '2026-08-20(목) 정기점검 전까지 보상 획득 가능. 공지 원문의 "8월 20일(수)" 표기는 오기 — 목요일이 맞음 (공지 수정 필요).' },
-    { date: '2026-07-09', category: 'redwar',    title: '붉은전장 매칭 이벤트 시작(점검 후)',
+    { date: '2026-07-09', category: 'event',     title: '붉은전장 매칭 이벤트 시작(점검 후)',
       detail: '주간 의뢰 [도전하라 I~III](각 증표 10개, 매주 목요일 00:00 UTC 초기화) + 가문 1회 누적 의뢰 [지배하라](증표 150개→크론석 700개). 증표 교환처 운영(승리 50/패배 10개). 시즌 캐릭터 수주 불가. ~7/23 점검 전.' },
-    { date: '2026-07-23', category: 'redwar',    title: '붉은전장 매칭 이벤트 종료(점검 전)' },
-    { date: '2026-07-10', category: 'anniv',     title: '째깍 도전과제 시작(DAY 01, 00:00 UTC)',
+    { date: '2026-07-23', category: 'event',     title: '붉은전장 매칭 이벤트 종료(점검 전)' },
+    { date: '2026-07-10', category: 'event',     title: '째깍 도전과제 시작(DAY 01, 00:00 UTC)',
       detail: '4주년 24시간 째깍 도전과제 — 7/10~7/16 매일 00:00~23:59 UTC 접속 시 완료. 지정 날짜가 지나면 완료 불가, 이미 완료한 보상은 이후에도 수령 가능. DAY 01 보상: 크론석의 축복(7일).' },
-    { date: '2026-07-16', category: 'anniv',     title: '째깍 도전과제 마지막 날(DAY 07, ~23:59 UTC)',
+    { date: '2026-07-16', category: 'event',     title: '째깍 도전과제 마지막 날(DAY 07, ~23:59 UTC)',
       detail: '마지막 도전과제 완료 기한: 7/16 23:59 UTC. DAY 07 보상: 카마실브의 축복(7일), 생활 강화 지원 상자 III.' },
     // ── 내가 직접 진행해야 하는 운영 작업 ──
-    { date: '2026-07-13', category: 'gmevent',   title: '[운영] GM이벤트 1회차: 월드채팅 안내 + 칭호 지급',
+    { date: '2026-07-13', category: 'ops',       title: '[운영] GM이벤트 1회차: 월드채팅 안내 + 칭호 지급',
       detail: '매칭 시작 전 월드 채팅으로 안내 → 이벤트 종료 후 GM과 같은 전장에서 매치 완료한 유저 대상 칭호 "GM과 친한(7일)" 지급. 참여 일자(당일) 내 지급 필수.' },
-    { date: '2026-07-15', category: 'gmevent',   title: '[운영] GM이벤트 2회차: 월드채팅 안내 + 칭호 지급',
+    { date: '2026-07-15', category: 'ops',       title: '[운영] GM이벤트 2회차: 월드채팅 안내 + 칭호 지급',
       detail: '매칭 시작 전 월드 채팅으로 안내 → 이벤트 종료 후 GM과 같은 전장에서 매치 완료한 유저 대상 칭호 "GM과 친한(7일)" 지급. 참여 일자(당일) 내 지급 필수.' },
-    { date: '2026-07-23', category: 'bug',       title: '해양 명성 상세 확인 불가 현상 수정 예정(정기점검)',
+    { date: '2026-07-23', category: 'issue',     title: '해양 명성 상세 확인 불가 현상 수정 예정(정기점검)',
       detail: '해양 명성 상세 내용을 확인할 수 없는 현상 — 7/23 정기점검을 통해 수정 예정. 점검 후 수정 반영 여부 확인.' },
-    { date: '2026-07-10', category: 'custom',    title: '[운영] 6월 상품권 결산 잔액 확인',
+    { date: '2026-07-10', category: 'ops',       title: '[운영] 6월 상품권 결산 잔액 확인',
       url: 'https://pearlabyss-op.slack.com/archives/C0B8G14UFDW/p1782885882278049' },
-    { date: '2026-07-30', category: 'custom',    title: '[운영] 8/6 일괄삭제 리마인드 공지 준비',
+    { date: '2026-07-30', category: 'ops',       title: '[운영] 8/6 일괄삭제 리마인드 공지 준비',
       detail: '8/6 정기점검 시 일괄 삭제 2건 사전 안내: ① 모험의 기록 아이템·진행 중 이벤트 의뢰·소지 의뢰서·전용 UI ② 은화상점 이국의 음식 아이템. 점검 1주 전(7/30) 기준으로 잡아둠 — 필요 시 날짜 조정.' },
 
     // ── 2026-07-23 정기점검 업데이트 & 하이델 연회 관련 신규 이벤트 (공지 19578·19580·19591~19599) ──
     // 하이델 연회 (heidel)
-    { date: '2026-07-23', category: 'heidel',    title: '글로벌 연회 정식 세트 시작(점검 후)', url: PEARL_NOTICE(19596),
+    { date: '2026-07-23', category: 'event',     title: '글로벌 연회 정식 세트 시작(점검 후)', url: PEARL_NOTICE(19596),
       detail: '글로벌 9개 권역 레시피를 합친 "연회 축하 정식 세트". 접속 시 전투/생활용 아이템 각 5개(각 3시간 지속). ~8/6 점검 전.' },
-    { date: '2026-08-06', category: 'heidel',    title: '글로벌 연회 정식 세트 종료(점검 전)', url: PEARL_NOTICE(19596) },
-    { date: '2026-08-20', category: 'heidel',    title: '글로벌 연회 정식 세트 아이템 일괄 삭제(점검 시)', url: PEARL_NOTICE(19596),
+    { date: '2026-08-06', category: 'event',     title: '글로벌 연회 정식 세트 종료(점검 전)', url: PEARL_NOTICE(19596) },
+    { date: '2026-08-20', category: 'event',     title: '글로벌 연회 정식 세트 아이템 일괄 삭제(점검 시)', url: PEARL_NOTICE(19596),
       detail: '도전과제 및 보유 아이템이 8/20 정기점검 시 모두 삭제.' },
-    { date: '2026-07-23', category: 'heidel',    title: '연회 카운트다운 도전과제 시작(점검 후)', url: PEARL_NOTICE(19594),
+    { date: '2026-07-23', category: 'event',     title: '연회 카운트다운 도전과제 시작(점검 후)', url: PEARL_NOTICE(19594),
       detail: 'D-3(7/23)~D-1(7/25) 매일 1회 접속 보상(크론석의 축복 3일 등). 연회 시작 7/26. 테르미안 주사위 선택 상자는 8/20 점검 시 도전과제에서 제외.' },
-    { date: '2026-07-25', category: 'heidel',    title: '연회 카운트다운 도전과제 종료(23:59 UTC)', url: PEARL_NOTICE(19594) },
-    { date: '2026-08-20', category: 'heidel',    title: '[2026 하이델 연회] 스페셜 펄 상자 판매 종료(07:00 UTC)', url: PEARL_NOTICE(19580),
+    { date: '2026-07-25', category: 'event',     title: '연회 카운트다운 도전과제 종료(23:59 UTC)', url: PEARL_NOTICE(19594) },
+    { date: '2026-08-20', category: 'pearl',     title: '[2026 하이델 연회] 스페셜 펄 상자 판매 종료(07:00 UTC)', url: PEARL_NOTICE(19580),
       detail: '판매 7/23 06:00 ~ 8/20 07:00 UTC. 계정당 1개(기간 초기화 없음), 구매 후 게임 내 편지로 수령.' },
-    { date: '2026-08-06', category: 'heidel',    title: '[하이델 연회] 스페셜 패키지 판매 종료(06:00 UTC)', url: PEARL_NOTICE(19580),
+    { date: '2026-08-06', category: 'pearl',     title: '[하이델 연회] 스페셜 패키지 판매 종료(06:00 UTC)', url: PEARL_NOTICE(19580),
       detail: '판매 7/23 06:00 ~ 8/6 06:00 UTC.' },
 
     // 커뮤니티/축제 (community)
-    { date: '2026-07-26', category: 'community', title: '트위치 드롭스 시작(01:00 UTC)', url: PEARL_NOTICE(19599),
+    { date: '2026-07-26', category: 'event',     title: '트위치 드롭스 시작(01:00 UTC)', url: PEARL_NOTICE(19599),
       detail: '검은사막 방송 & 하이델 연회 시청 보상. 1시간(프리미엄 의상 상자 등)/3시간/5시간/10시간(크론석 1,000개). GM 연회 라이브 7/26 09:30 GMT+9, 테르미안 해변 바한 인근.' },
-    { date: '2026-07-28', category: 'community', title: '트위치 드롭스 종료(23:59 UTC)', url: PEARL_NOTICE(19599) },
-    { date: '2026-08-11', category: 'community', title: '트위치 드롭스 보상 수령 기한(23:59 UTC)', url: PEARL_NOTICE(19599) },
-    { date: '2026-07-24', category: 'community', title: '신규/복귀 접속보상 시작(00:00 UTC)', url: PEARL_NOTICE(19598),
+    { date: '2026-07-28', category: 'event',     title: '트위치 드롭스 종료(23:59 UTC)', url: PEARL_NOTICE(19599) },
+    { date: '2026-08-11', category: 'event',     title: '트위치 드롭스 보상 수령 기한(23:59 UTC)', url: PEARL_NOTICE(19599) },
+    { date: '2026-07-24', category: 'event',     title: '신규/복귀 접속보상 시작(00:00 UTC)', url: PEARL_NOTICE(19598),
       detail: '신규(가문 생성 60일/1440시간 이내) 21일간 일일 접속 보상 / 복귀(최근 30일+ 미접속·거래소 미이용) 14일간. 반려동물·요정·강화 지원·경험치 주문서 등.' },
-    { date: '2026-09-23', category: 'community', title: '신규/복귀 접속보상 종료(23:59 UTC)', url: PEARL_NOTICE(19598) },
-    { date: '2026-07-23', category: 'community', title: '테르미안 해변 여름 축제 시작(09:00 UTC)', url: PEARL_NOTICE(19595),
+    { date: '2026-09-23', category: 'event',     title: '신규/복귀 접속보상 종료(23:59 UTC)', url: PEARL_NOTICE(19598) },
+    { date: '2026-07-23', category: 'event',     title: '테르미안 해변 여름 축제 시작(09:00 UTC)', url: PEARL_NOTICE(19595),
       detail: '고대 흑정령 모험판·특별 어종 낚시·주간 은화 상점(매주 월 00:00 UTC 초기화). 프리미엄 강화 상자·크론석·의상 등. ~8/20 점검 전.' },
-    { date: '2026-08-19', category: 'community', title: '테르미안 여름 축제 주간의뢰·매일도전 종료(23:59 UTC)', url: PEARL_NOTICE(19595),
+    { date: '2026-08-19', category: 'event',     title: '테르미안 여름 축제 주간의뢰·매일도전 종료(23:59 UTC)', url: PEARL_NOTICE(19595),
       detail: '주간 의뢰 ~8/19 23:59(매주 목 00:00 초기화), 매일 도전과제(주사위) 7/24 00:00 ~ 8/19 23:59 UTC.' },
-    { date: '2026-08-20', category: 'community', title: '테르미안 해변 여름 축제 종료(점검 전)', url: PEARL_NOTICE(19595) },
+    { date: '2026-08-20', category: 'event',     title: '테르미안 해변 여름 축제 종료(점검 전)', url: PEARL_NOTICE(19595) },
 
     // 사냥 스페셜 패스 (pass) — 기존 사냥패스(7/16 판매종료)와 별개인 "한 번 더" 패스
-    { date: '2026-07-23', category: 'pass',      title: '사냥 스페셜 패스 판매 시작(점검 후)', url: PEARL_NOTICE(19597),
+    { date: '2026-07-23', category: 'pearl',     title: '사냥 스페셜 패스 판매 시작(점검 후)', url: PEARL_NOTICE(19597),
       detail: '월드 사냥터 몬스터 처치 포인트(500~16,000) 누적 보상. 유료 패스 3,000펄, 가문당 1개. 펄 상점 판매는 7/23 06:00 UTC부터.' },
-    { date: '2026-08-13', category: 'pass',      title: '사냥 스페셜 패스 판매 종료(07:00 UTC)', url: PEARL_NOTICE(19597) },
-    { date: '2026-08-20', category: 'pass',      title: '사냥 스페셜 패스 보상수령 종료(점검 전)', url: PEARL_NOTICE(19597) },
+    { date: '2026-08-13', category: 'pearl',     title: '사냥 스페셜 패스 판매 종료(07:00 UTC)', url: PEARL_NOTICE(19597) },
+    { date: '2026-08-20', category: 'pearl',     title: '사냥 스페셜 패스 보상수령 종료(점검 전)', url: PEARL_NOTICE(19597) },
 
     // 솔라레 우당탕탕 협동 대전 (solare) — 7/23 업데이트 항목은 기존에 있으므로 milestone만
-    { date: '2026-07-30', category: 'solare',    title: '우당탕탕 협동 대전 1주차 의뢰 마감(07:00 UTC)', url: PEARL_NOTICE(19593) },
-    { date: '2026-08-06', category: 'solare',    title: '우당탕탕 협동 대전 종료·보상 지급(점검 시)', url: PEARL_NOTICE(19593),
+    { date: '2026-07-30', category: 'event',     title: '우당탕탕 협동 대전 1주차 의뢰 마감(07:00 UTC)', url: PEARL_NOTICE(19593) },
+    { date: '2026-08-06', category: 'event',     title: '우당탕탕 협동 대전 종료·보상 지급(점검 시)', url: PEARL_NOTICE(19593),
       detail: '종료 8/6 점검 전, 보상(EVENT 3) 8/6 점검 시 지급. 3인 팀 협동 대전, 정규 시즌 점수 유지.' },
-    { date: '2026-08-20', category: 'solare',    title: '우당탕탕 협동 대전 특별 칭호 삭제(점검 시)', url: PEARL_NOTICE(19593) },
+    { date: '2026-08-20', category: 'event',     title: '우당탕탕 협동 대전 특별 칭호 삭제(점검 시)', url: PEARL_NOTICE(19593) },
 
     // 사막의 빛 목표 달성 보상 (anniv) — 목표 달성 확정
-    { date: '2026-07-23', category: 'anniv',     title: '사막의 빛 달성: 아침의 축복 2배 시작(점검 후)', url: PEARL_NOTICE(19592),
+    { date: '2026-07-23', category: 'event',     title: '사막의 빛 달성: 아침의 축복 2배 시작(점검 후)', url: PEARL_NOTICE(19592),
       detail: '동해도 우두머리 처치 시 아침의 축복 2배(3시간) — 공격력·방어력·아이템 획득확률 각 2배. ~8/6 점검 전.' },
-    { date: '2026-08-06', category: 'anniv',     title: '사막의 빛 달성: 아침의 축복 2배 종료(점검 전)', url: PEARL_NOTICE(19592) },
-    { date: '2026-07-23', category: 'anniv',     title: '사막의 빛 달성: 축복의 핫타임 시작(점검 후)', url: PEARL_NOTICE(19591),
+    { date: '2026-08-06', category: 'event',     title: '사막의 빛 달성: 아침의 축복 2배 종료(점검 전)', url: PEARL_NOTICE(19592) },
+    { date: '2026-07-23', category: 'event',     title: '사막의 빛 달성: 축복의 핫타임 시작(점검 후)', url: PEARL_NOTICE(19591),
       detail: '아이템 획득확률 +100%, 전투 경험치 +1000%, 기술 경험치 +400%, 생활 경험치 +100%(탑승물/무역 제외). ~8/6 점검 전.' },
-    { date: '2026-08-06', category: 'anniv',     title: '사막의 빛 달성: 축복의 핫타임 종료(점검 전)', url: PEARL_NOTICE(19591) },
+    { date: '2026-08-06', category: 'event',     title: '사막의 빛 달성: 축복의 핫타임 종료(점검 전)', url: PEARL_NOTICE(19591) },
 
     // 7/23 업데이트 — 전이 클래스 로테이션 연장 (custom)
-    { date: '2026-08-06', category: 'custom',    title: '세이지/하사신 전이 클래스 로테이션 종료(점검 전)', url: PEARL_NOTICE(19578),
+    { date: '2026-08-06', category: 'update',    title: '세이지/하사신 전이 클래스 로테이션 종료(점검 전)', url: PEARL_NOTICE(19578),
       detail: '세이지/하사신 전이 클래스 로테이션 기간 연장 — 기존 7/23 점검 전 종료에서 8/6 점검 전으로 변경.' },
 
     // 운영 작업
-    { date: '2026-08-28', category: 'custom',    title: '[운영] 알문 최신화' },
-    { date: '2026-08-29', category: 'custom',    title: '[운영] 신캐 대화그룹 세팅',
+    { date: '2026-08-28', category: 'ops',       title: '[운영] 알문 최신화' },
+    { date: '2026-08-29', category: 'ops',       title: '[운영] 신캐 대화그룹 세팅',
       detail: '신규 캐릭터 대화그룹 세팅 작업.' },
   ].map(e => ({ ...e, _key: `${e.date}__${e.title}` }));
 
@@ -1307,7 +1290,7 @@
       const collapseDone = !searchQuery && !expanded && dayEvents.length > MAX_BADGES_PER_CELL && doneEvents.length > 0;
       const visibleEvents = collapseDone ? dayEvents.filter(e => !doneSet.has(eventKey(e))) : dayEvents;
       let badges = visibleEvents.map(e => {
-        const meta = CATEGORY_META[e.category];
+        const meta = metaFor(e.category);
         const key = eventKey(e);
         const doneClass = doneSet.has(key) ? ' sched-badge-done' : '';
         const tooltip = escapeAttr(badgeTooltip(e));
@@ -1350,7 +1333,7 @@
     const tbody = document.getElementById('scheduleDetailBody');
     const sorted = allEvents().filter(eventVisible).sort((a, b) => a.date.localeCompare(b.date));
     tbody.innerHTML = sorted.map(e => {
-      const meta = CATEGORY_META[e.category];
+      const meta = metaFor(e.category);
       const key = eventKey(e);
       const isDone = doneSet.has(key);
       const link = e.url
@@ -1436,7 +1419,7 @@
       .filter(e => e.date >= todayStr && e.date <= endStr && eventVisible(e))
       .sort((a, b) => a.date.localeCompare(b.date));
     const rows = upcoming.map(e => {
-      const meta = CATEGORY_META[e.category];
+      const meta = metaFor(e.category);
       const key = eventKey(e);
       const isToday = e.date === todayStr;
       const done = doneSet.has(key);
@@ -1473,7 +1456,7 @@
     const date = btn.dataset.date;
     const text = prompt(`${date} 기록 추가:`);
     if (!text || !text.trim()) return;
-    customEvents.push({ id: makeCustomId(), date, category: 'custom', title: text.trim(), custom: true });
+    customEvents.push({ id: makeCustomId(), date, category: 'etc', title: text.trim(), custom: true });
     saveCustomEvents(customEvents);
     renderScheduleCalendars();
     renderScheduleDetailTable();
@@ -1495,7 +1478,7 @@
     const date = td.dataset.date;
     const text = prompt(`${date} 기록 추가:`);
     if (!text || !text.trim()) return;
-    customEvents.push({ id: makeCustomId(), date, category: 'custom', title: text.trim(), custom: true });
+    customEvents.push({ id: makeCustomId(), date, category: 'etc', title: text.trim(), custom: true });
     saveCustomEvents(customEvents);
     renderScheduleCalendars();
     renderScheduleDetailTable();
@@ -1509,7 +1492,7 @@
     const target = allEvents().find(ev => eventKey(ev) === key);
     if (!target) return;
     openDetailEventKey = key;
-    const meta = CATEGORY_META[target.category];
+    const meta = metaFor(target.category);
     document.getElementById('eventDetailDate').textContent = formatDateLabel(target.date);
     const tagEl = document.getElementById('eventDetailTag');
     tagEl.textContent = meta.label;
@@ -1806,7 +1789,7 @@
       lines.push(`UID:${icsHash(eventKey(e))}-${date}@bdo-console-schedule`);
       lines.push(`DTSTAMP:${stamp}`);
       lines.push(`DTSTART;VALUE=DATE:${date}`);
-      lines.push(icsFold(`SUMMARY:${icsEscape(`[${CATEGORY_META[e.category].label}] ${e.title}`)}`));
+      lines.push(icsFold(`SUMMARY:${icsEscape(`[${metaFor(e.category).label}] ${e.title}`)}`));
       if (desc) lines.push(icsFold(`DESCRIPTION:${icsEscape(desc)}`));
       // 당일 09:00(현지 시각)에 알림
       lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:일정 알림', 'TRIGGER:PT9H', 'END:VALARM');
