@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PS 패키지 판매량 정리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#F2F4F8; --surface:#FFFFFF; --sunk:#F7F8FB; --ink:#131C33; --muted:#5A6580; --line:#DBE0EA;
+  --accent:#2446C8; --accent-ink:#FFFFFF; --accent-soft:#E7ECFB; --good:#1D7F55; --good-soft:#E3F3EB;
+  --warn:#9A6212; --warn-soft:#FBF0DD; --bad:#B4322B; --bad-soft:#FBE7E5;
+  --sans:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0D1220; --surface:#151C2D; --sunk:#111727; --ink:#E5E9F2; --muted:#98A2B9; --line:#283149;
+    --accent:#7F98FF; --accent-ink:#0D1220; --accent-soft:#1D2747; --good:#5CC795; --good-soft:#14301F;
+    --warn:#E3B062; --warn-soft:#33270F; --bad:#F08A82; --bad-soft:#3A1917;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0D1220; --surface:#151C2D; --sunk:#111727; --ink:#E5E9F2; --muted:#98A2B9; --line:#283149;
+  --accent:#7F98FF; --accent-ink:#0D1220; --accent-soft:#1D2747; --good:#5CC795; --good-soft:#14301F;
+  --warn:#E3B062; --warn-soft:#33270F; --bad:#F08A82; --bad-soft:#3A1917;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.55;padding-inline:16px;padding-block:28px 64px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:20px}
+header{display:grid;gap:4px}
+h1{font-size:22px;margin:0;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--muted);margin:0;max-width:70ch}
+h2{font-size:15px;margin:0;font-weight:700;display:flex;align-items:center;gap:10px}
+.step{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--accent);background:var(--accent-soft);border-radius:4px;padding:1px 6px;letter-spacing:.04em}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:14px;min-width:0}
+.top{display:grid;grid-template-columns:1.1fr 1fr;gap:20px}
+@media (max-width:820px){.top{grid-template-columns:1fr}}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:22px 16px;display:grid;gap:8px;justify-items:center;text-align:center;background:var(--sunk);cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop strong{font-size:14px}
+.drop span{color:var(--muted);font-size:12.5px}
+.drop:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.fact{display:grid;gap:2px}
+.fact b{font-family:var(--mono);font-weight:500;font-size:14px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.lbl{font-size:11.5px;color:var(--muted);letter-spacing:.02em}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.field{display:grid;gap:4px}
+input[type=date],input[type=text],textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 9px;min-width:0}
+input[type=date]{font-family:var(--mono);font-size:13px}
+textarea{font-family:var(--mono);font-size:13px;width:100%;min-height:96px;resize:vertical;line-height:1.6}
+input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+label.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+button{font:inherit;font-weight:600;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 14px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.primary:hover{filter:brightness(1.08)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+.map{display:grid;grid-template-columns:44px minmax(120px,170px) 1fr auto;gap:6px 10px;align-items:center}
+.map .h{font-size:11.5px;color:var(--muted)}
+.map .col{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+.map input{width:100%}
+@media (max-width:620px){.map{grid-template-columns:36px 1fr auto}.map .kw{grid-column:1 / -1}.map .h.kwh{display:none}}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pill.ok{background:var(--good-soft);color:var(--good)}
+.pill.no{background:var(--bad-soft);color:var(--bad)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.idle{background:var(--sunk);color:var(--muted)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.bar .left{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.hint{font-family:var(--mono);font-size:12.5px;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:5px 10px}
+.tbl{overflow:auto;max-height:460px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:5px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+th{position:sticky;top:0;background:var(--sunk);font-size:12px;font-weight:600;color:var(--muted);z-index:1}
+th:first-child,td:first-child{text-align:left}
+td{font-family:var(--mono);font-size:12.5px}
+td.rn{color:var(--muted)}
+td.z{color:var(--muted);opacity:.6}
+td.neg{color:var(--bad)}
+tr.sum td{font-weight:600;background:var(--accent-soft);position:sticky;top:29px;z-index:1}
+tr.partial td:first-child::after{content:" 부분";font-family:var(--sans);font-size:10.5px;color:var(--warn);margin-left:4px}
+.empty{padding:28px 16px;text-align:center;color:var(--muted);background:var(--sunk);border-radius:8px;font-size:13px}
+.matches{display:grid;gap:8px}
+.mline{border:1px solid var(--line);border-radius:8px;padding:9px 12px;display:grid;gap:4px}
+.mline .t{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-weight:600}
+.mline ul{margin:0;padding-left:18px;font-size:12.5px;color:var(--muted)}
+.mline code{font-family:var(--mono);font-size:12px}
+details{border-top:1px solid var(--line);padding-top:10px}
+summary{cursor:pointer;font-weight:600;font-size:13px}
+.plist{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:220px;overflow:auto}
+.plist button{font-weight:500;font-size:12px;padding:4px 9px;display:inline-flex;gap:6px;align-items:center}
+.plist button em{font-style:normal;font-family:var(--mono);color:var(--muted);font-size:11.5px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.fallback{width:100%;min-height:80px;margin-top:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>PS 패키지 판매량 정리</h1>
+    <p class="sub">SIE SKU Sales Cube CSV를 넣으면 상품별 Sales Quantity를 날짜별로 합산해, <b>통합</b> 시트에 바로 붙여넣을 수 있는 형태로 만들어 줍니다. 파일은 이 브라우저 안에서만 처리되고 어디에도 업로드되지 않습니다.</p>
+  </header>
+
+  <div class="top">
+    <section class="panel" aria-labelledby="h-load">
+      <h2 id="h-load"><span class="step">1</span>CSV 불러오기</h2>
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="CSV 파일 선택">
+        <strong>CSV 파일을 여기로 끌어다 놓거나 클릭해서 선택</strong>
+        <span>C04_ SKU Sales Cube_ Last 3 months by day and SKU_Finance Team.csv</span>
+        <input type="file" id="file" accept=".csv,text/csv" hidden>
+      </div>
+      <div class="facts" id="facts">
+        <div class="fact"><span class="lbl">파일</span><b id="f-name">—</b></div>
+        <div class="fact"><span class="lbl">행 수</span><b id="f-rows">—</b></div>
+        <div class="fact"><span class="lbl">데이터 기간</span><b id="f-range">—</b></div>
+        <div class="fact"><span class="lbl">상품 수</span><b id="f-prod">—</b></div>
+      </div>
+      <p class="note" id="f-msg">환불·무료·바우처를 포함한 전체 Sales Quantity 합계입니다. 기존 통합 시트와 같은 기준입니다.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="h-opt">
+      <h2 id="h-opt"><span class="step">2</span>기간과 붙여넣기 설정</h2>
+      <div class="row">
+        <div class="field"><label class="lbl" for="d-from">시작일</label><input type="date" id="d-from"></div>
+        <div class="field"><label class="lbl" for="d-to">종료일</label><input type="date" id="d-to"></div>
+        <button id="d-reset" type="button">파일 전체 기간</button>
+      </div>
+      <div class="row">
+        <div class="field"><label class="lbl" for="base-date">통합 시트 기준 날짜</label><input type="date" id="base-date" value="2025-06-12"></div>
+        <div class="field"><label class="lbl" for="base-row">그 날짜의 행 번호</label><input type="text" id="base-row" value="5" inputmode="numeric" style="width:80px;font-family:var(--mono)"></div>
+      </div>
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="opt-date"> 날짜 열 포함해서 복사</label>
+        <label class="chk"><input type="checkbox" id="opt-head"> 헤더 포함해서 복사</label>
+      </div>
+      <p class="note">기본은 숫자만 복사합니다. 통합 시트 A열 날짜는 수식이라 그대로 두고, 아래 안내된 셀에 붙여넣으면 됩니다.</p>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="h-pkg">
+    <div class="bar">
+      <h2 id="h-pkg"><span class="step">3</span>패키지 판매량 · 통합 B~G</h2>
+      <div class="left">
+        <span class="hint" id="pkg-hint">CSV를 불러오면 붙여넣을 위치가 표시됩니다</span>
+        <button class="primary" id="pkg-copy" type="button" disabled>복사</button>
+      </div>
+    </div>
+    <div class="map" id="map">
+      <span class="h">열</span><span class="h">항목</span><span class="h kwh">CSV Product Name</span><span class="h"></span>
+    </div>
+    <details>
+      <summary>B열 포함 여부</summary>
+      <p class="note" style="margin-top:8px"><label class="chk"><input type="checkbox" id="opt-b" checked> B열(사전 다운로드/무료 업그레이드)도 함께 정리</label><br>끄면 C~G만 복사되고 붙여넣기 위치가 C열로 바뀝니다.</p>
+    </details>
+    <div id="pkg-table"><div class="empty">CSV를 불러오면 날짜별 합계가 여기에 표시됩니다.</div></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-tmp">
+    <div class="bar">
+      <h2 id="h-tmp"><span class="step">4</span>Temporal · 기간제 상품</h2>
+      <div class="left">
+        <span class="hint" id="tmp-hint">Temporal 시작 열(N)에 붙여넣기</span>
+        <button class="primary" id="tmp-copy" type="button" disabled>복사</button>
+      </div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="tmp-text">한 줄에 한 열씩 적어 주세요. <code>라벨 = 키워드</code> 형식이며, 키워드는 쉼표로 여러 개 적을 수 있습니다. 키워드와 이름이 정확히 같은 상품이 있으면 그 상품만 합산하고, 없으면 이름이나 Product ID에 키워드가 들어 있는 상품을 모두 합산합니다.</label>
+      <textarea id="tmp-text" spellcheck="false">PS_Edt = Black Desert
+PS_IPk = Dark Prince Gift Pack</textarea>
+    </div>
+    <div class="matches" id="tmp-matches"></div>
+    <details id="plist-wrap">
+      <summary>CSV에 있는 상품 목록 (클릭하면 Temporal에 한 줄 추가)</summary>
+      <div class="plist" id="plist"><span class="note">CSV를 불러오면 표시됩니다.</span></div>
+    </details>
+    <div id="tmp-table"><div class="empty">Temporal 줄을 적고 CSV를 불러오면 날짜별 합계가 표시됩니다.</div></div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>/* @license
+Papa Parse
+v5.4.1
+https://github.com/mholt/PapaParse
+License: MIT
+*/
+!function(e,t){"function"==typeof define&&define.amd?define([],t):"object"==typeof module&&"undefined"!=typeof exports?module.exports=t():e.Papa=t()}(this,function s(){"use strict";var f="undefined"!=typeof self?self:"undefined"!=typeof window?window:void 0!==f?f:{};var n=!f.document&&!!f.postMessage,o=f.IS_PAPA_WORKER||!1,a={},u=0,b={parse:function(e,t){var r=(t=t||{}).dynamicTyping||!1;J(r)&&(t.dynamicTypingFunction=r,r={});if(t.dynamicTyping=r,t.transform=!!J(t.transform)&&t.transform,t.worker&&b.WORKERS_SUPPORTED){var i=function(){if(!b.WORKERS_SUPPORTED)return!1;var e=(r=f.URL||f.webkitURL||null,i=s.toString(),b.BLOB_URL||(b.BLOB_URL=r.createObjectURL(new Blob(["var global = (function() { if (typeof self !== 'undefined') { return self; } if (typeof window !== 'undefined') { return window; } if (typeof global !== 'undefined') { return global; } return {}; })(); global.IS_PAPA_WORKER=true; ","(",i,")();"],{type:"text/javascript"})))),t=new f.Worker(e);var r,i;return t.onmessage=_,t.id=u++,a[t.id]=t}();return i.userStep=t.step,i.userChunk=t.chunk,i.userComplete=t.complete,i.userError=t.error,t.step=J(t.step),t.chunk=J(t.chunk),t.complete=J(t.complete),t.error=J(t.error),delete t.worker,void i.postMessage({input:e,config:t,workerId:i.id})}var n=null;b.NODE_STREAM_INPUT,"string"==typeof e?(e=function(e){if(65279===e.charCodeAt(0))return e.slice(1);return e}(e),n=t.download?new l(t):new p(t)):!0===e.readable&&J(e.read)&&J(e.on)?n=new g(t):(f.File&&e instanceof File||e instanceof Object)&&(n=new c(t));return n.stream(e)},unparse:function(e,t){var n=!1,_=!0,m=",",y="\r\n",s='"',a=s+s,r=!1,i=null,o=!1;!function(){if("object"!=typeof t)return;"string"!=typeof t.delimiter||b.BAD_DELIMITERS.filter(function(e){return-1!==t.delimiter.indexOf(e)}).length||(m=t.delimiter);("boolean"==typeof t.quotes||"function"==typeof t.quotes||Array.isArray(t.quotes))&&(n=t.quotes);"boolean"!=typeof t.skipEmptyLines&&"string"!=typeof t.skipEmptyLines||(r=t.skipEmptyLines);"string"==typeof t.newline&&(y=t.newline);"string"==typeof t.quoteChar&&(s=t.quoteChar);"boolean"==typeof t.header&&(_=t.header);if(Array.isArray(t.columns)){if(0===t.columns.length)throw new Error("Option columns is empty");i=t.columns}void 0!==t.escapeChar&&(a=t.escapeChar+s);("boolean"==typeof t.escapeFormulae||t.escapeFormulae instanceof RegExp)&&(o=t.escapeFormulae instanceof RegExp?t.escapeFormulae:/^[=+\-@\t\r].*$/)}();var u=new RegExp(Q(s),"g");"string"==typeof e&&(e=JSON.parse(e));if(Array.isArray(e)){if(!e.length||Array.isArray(e[0]))return h(null,e,r);if("object"==typeof e[0])return h(i||Object.keys(e[0]),e,r)}else if("object"==typeof e)return"string"==typeof e.data&&(e.data=JSON.parse(e.data)),Array.isArray(e.data)&&(e.fields||(e.fields=e.meta&&e.meta.fields||i),e.fields||(e.fields=Array.isArray(e.data[0])?e.fields:"object"==typeof e.data[0]?Object.keys(e.data[0]):[]),Array.isArray(e.data[0])||"object"==typeof e.data[0]||(e.data=[e.data])),h(e.fields||[],e.data||[],r);throw new Error("Unable to serialize unrecognized input");function h(e,t,r){var i="";"string"==typeof e&&(e=JSON.parse(e)),"string"==typeof t&&(t=JSON.parse(t));var n=Array.isArray(e)&&0<e.length,s=!Array.isArray(t[0]);if(n&&_){for(var a=0;a<e.length;a++)0<a&&(i+=m),i+=v(e[a],a);0<t.length&&(i+=y)}for(var o=0;o<t.length;o++){var u=n?e.length:t[o].length,h=!1,f=n?0===Object.keys(t[o]).length:0===t[o].length;if(r&&!n&&(h="greedy"===r?""===t[o].join("").trim():1===t[o].length&&0===t[o][0].length),"greedy"===r&&n){for(var d=[],l=0;l<u;l++){var c=s?e[l]:l;d.push(t[o][c])}h=""===d.join("").trim()}if(!h){for(var p=0;p<u;p++){0<p&&!f&&(i+=m);var g=n&&s?e[p]:p;i+=v(t[o][g],p)}o<t.length-1&&(!r||0<u&&!f)&&(i+=y)}}return i}function v(e,t){if(null==e)return"";if(e.constructor===Date)return JSON.stringify(e).slice(1,25);var r=!1;o&&"string"==typeof e&&o.test(e)&&(e="'"+e,r=!0);var i=e.toString().replace(u,a);return(r=r||!0===n||"function"==typeof n&&n(e,t)||Array.isArray(n)&&n[t]||function(e,t){for(var r=0;r<t.length;r++)if(-1<e.indexOf(t[r]))return!0;return!1}(i,b.BAD_DELIMITERS)||-1<i.indexOf(m)||" "===i.charAt(0)||" "===i.charAt(i.length-1))?s+i+s:i}}};if(b.RECORD_SEP=String.fromCharCode(30),b.UNIT_SEP=String.fromCharCode(31),b.BYTE_ORDER_MARK="\ufeff",b.BAD_DELIMITERS=["\r","\n",'"',b.BYTE_ORDER_MARK],b.WORKERS_SUPPORTED=!n&&!!f.Worker,b.NODE_STREAM_INPUT=1,b.LocalChunkSize=10485760,b.RemoteChunkSize=5242880,b.DefaultDelimiter=",",b.Parser=E,b.ParserHandle=r,b.NetworkStreamer=l,b.FileStreamer=c,b.StringStreamer=p,b.ReadableStreamStreamer=g,f.jQuery){var d=f.jQuery;d.fn.parse=function(o){var r=o.config||{},u=[];return this.each(function(e){if(!("INPUT"===d(this).prop("tagName").toUpperCase()&&"file"===d(this).attr("type").toLowerCase()&&f.FileReader)||!this.files||0===this.files.length)return!0;for(var t=0;t<this.files.length;t++)u.push({file:this.files[t],inputElem:this,instanceConfig:d.extend({},r)})}),e(),this;function e(){if(0!==u.length){var e,t,r,i,n=u[0];if(J(o.before)){var s=o.before(n.file,n.inputElem);if("object"==typeof s){if("abort"===s.action)return e="AbortError",t=n.file,r=n.inputElem,i=s.reason,void(J(o.error)&&o.error({name:e},t,r,i));if("skip"===s.action)return void h();"object"==typeof s.config&&(n.instanceConfig=d.extend(n.instanceConfig,s.config))}else if("skip"===s)return void h()}var a=n.instanceConfig.complete;n.instanceConfig.complete=function(e){J(a)&&a(e,n.file,n.inputElem),h()},b.parse(n.file,n.instanceConfig)}else J(o.complete)&&o.complete()}function h(){u.splice(0,1),e()}}}function h(e){this._handle=null,this._finished=!1,this._completed=!1,this._halted=!1,this._input=null,this._baseIndex=0,this._partialLine="",this._rowCount=0,this._start=0,this._nextChunk=null,this.isFirstChunk=!0,this._completeResults={data:[],errors:[],meta:{}},function(e){var t=w(e);t.chunkSize=parseInt(t.chunkSize),e.step||e.chunk||(t.chunkSize=null);this._handle=new r(t),(this._handle.streamer=this)._config=t}.call(this,e),this.parseChunk=function(e,t){if(this.isFirstChunk&&J(this._config.beforeFirstChunk)){var r=this._config.beforeFirstChunk(e);void 0!==r&&(e=r)}this.isFirstChunk=!1,this._halted=!1;var i=this._partialLine+e;this._partialLine="";var n=this._handle.parse(i,this._baseIndex,!this._finished);if(!this._handle.paused()&&!this._handle.aborted()){var s=n.meta.cursor;this._finished||(this._partialLine=i.substring(s-this._baseIndex),this._baseIndex=s),n&&n.data&&(this._rowCount+=n.data.length);var a=this._finished||this._config.preview&&this._rowCount>=this._config.preview;if(o)f.postMessage({results:n,workerId:b.WORKER_ID,finished:a});else if(J(this._config.chunk)&&!t){if(this._config.chunk(n,this._handle),this._handle.paused()||this._handle.aborted())return void(this._halted=!0);n=void 0,this._completeResults=void 0}return this._config.step||this._config.chunk||(this._completeResults.data=this._completeResults.data.concat(n.data),this._completeResults.errors=this._completeResults.errors.concat(n.errors),this._completeResults.meta=n.meta),this._completed||!a||!J(this._config.complete)||n&&n.meta.aborted||(this._config.complete(this._completeResults,this._input),this._completed=!0),a||n&&n.meta.paused||this._nextChunk(),n}this._halted=!0},this._sendError=function(e){J(this._config.error)?this._config.error(e):o&&this._config.error&&f.postMessage({workerId:b.WORKER_ID,error:e,finished:!1})}}function l(e){var i;(e=e||{}).chunkSize||(e.chunkSize=b.RemoteChunkSize),h.call(this,e),this._nextChunk=n?function(){this._readChunk(),this._chunkLoaded()}:function(){this._readChunk()},this.stream=function(e){this._input=e,this._nextChunk()},this._readChunk=function(){if(this._finished)this._chunkLoaded();else{if(i=new XMLHttpRequest,this._config.withCredentials&&(i.withCredentials=this._config.withCredentials),n||(i.onload=v(this._chunkLoaded,this),i.onerror=v(this._chunkError,this)),i.open(this._config.downloadRequestBody?"POST":"GET",this._input,!n),this._config.downloadRequestHeaders){var e=this._config.downloadRequestHeaders;for(var t in e)i.setRequestHeader(t,e[t])}if(this._config.chunkSize){var r=this._start+this._config.chunkSize-1;i.setRequestHeader("Range","bytes="+this._start+"-"+r)}try{i.send(this._config.downloadRequestBody)}catch(e){this._chunkError(e.message)}n&&0===i.status&&this._chunkError()}},this._chunkLoaded=function(){4===i.readyState&&(i.status<200||400<=i.status?this._chunkError():(this._start+=this._config.chunkSize?this._config.chunkSize:i.responseText.length,this._finished=!this._config.chunkSize||this._start>=function(e){var t=e.getResponseHeader("Content-Range");if(null===t)return-1;return parseInt(t.substring(t.lastIndexOf("/")+1))}(i),this.parseChunk(i.responseText)))},this._chunkError=function(e){var t=i.statusText||e;this._sendError(new Error(t))}}function c(e){var i,n;(e=e||{}).chunkSize||(e.chunkSize=b.LocalChunkSize),h.call(this,e);var s="undefined"!=typeof FileReader;this.stream=function(e){this._input=e,n=e.slice||e.webkitSlice||e.mozSlice,s?((i=new FileReader).onload=v(this._chunkLoaded,this),i.onerror=v(this._chunkError,this)):i=new FileReaderSync,this._nextChunk()},this._nextChunk=function(){this._finished||this._config.preview&&!(this._rowCount<this._config.preview)||this._readChunk()},this._readChunk=function(){var e=this._input;if(this._config.chunkSize){var t=Math.min(this._start+this._config.chunkSize,this._input.size);e=n.call(e,this._start,t)}var r=i.readAsText(e,this._config.encoding);s||this._chunkLoaded({target:{result:r}})},this._chunkLoaded=function(e){this._start+=this._config.chunkSize,this._finished=!this._config.chunkSize||this._start>=this._input.size,this.parseChunk(e.target.result)},this._chunkError=function(){this._sendError(i.error)}}function p(e){var r;h.call(this,e=e||{}),this.stream=function(e){return r=e,this._nextChunk()},this._nextChunk=function(){if(!this._finished){var e,t=this._config.chunkSize;return t?(e=r.substring(0,t),r=r.substring(t)):(e=r,r=""),this._finished=!r,this.parseChunk(e)}}}function g(e){h.call(this,e=e||{});var t=[],r=!0,i=!1;this.pause=function(){h.prototype.pause.apply(this,arguments),this._input.pause()},this.resume=function(){h.prototype.resume.apply(this,arguments),this._input.resume()},this.stream=function(e){this._input=e,this._input.on("data",this._streamData),this._input.on("end",this._streamEnd),this._input.on("error",this._streamError)},this._checkIsFinished=function(){i&&1===t.length&&(this._finished=!0)},this._nextChunk=function(){this._checkIsFinished(),t.length?this.parseChunk(t.shift()):r=!0},this._streamData=v(function(e){try{t.push("string"==typeof e?e:e.toString(this._config.encoding)),r&&(r=!1,this._checkIsFinished(),this.parseChunk(t.shift()))}catch(e){this._streamError(e)}},this),this._streamError=v(function(e){this._streamCleanUp(),this._sendError(e)},this),this._streamEnd=v(function(){this._streamCleanUp(),i=!0,this._streamData("")},this),this._streamCleanUp=v(function(){this._input.removeListener("data",this._streamData),this._input.removeListener("end",this._streamEnd),this._input.removeListener("error",this._streamError)},this)}function r(m){var a,o,u,i=Math.pow(2,53),n=-i,s=/^\s*-?(\d+\.?|\.\d+|\d+\.\d+)([eE][-+]?\d+)?\s*$/,h=/^((\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)))$/,t=this,r=0,f=0,d=!1,e=!1,l=[],c={data:[],errors:[],meta:{}};if(J(m.step)){var p=m.step;m.step=function(e){if(c=e,_())g();else{if(g(),0===c.data.length)return;r+=e.data.length,m.preview&&r>m.preview?o.abort():(c.data=c.data[0],p(c,t))}}}function y(e){return"greedy"===m.skipEmptyLines?""===e.join("").trim():1===e.length&&0===e[0].length}function g(){return c&&u&&(k("Delimiter","UndetectableDelimiter","Unable to auto-detect delimiting character; defaulted to '"+b.DefaultDelimiter+"'"),u=!1),m.skipEmptyLines&&(c.data=c.data.filter(function(e){return!y(e)})),_()&&function(){if(!c)return;function e(e,t){J(m.transformHeader)&&(e=m.transformHeader(e,t)),l.push(e)}if(Array.isArray(c.data[0])){for(var t=0;_()&&t<c.data.length;t++)c.data[t].forEach(e);c.data.splice(0,1)}else c.data.forEach(e)}(),function(){if(!c||!m.header&&!m.dynamicTyping&&!m.transform)return c;function e(e,t){var r,i=m.header?{}:[];for(r=0;r<e.length;r++){var n=r,s=e[r];m.header&&(n=r>=l.length?"__parsed_extra":l[r]),m.transform&&(s=m.transform(s,n)),s=v(n,s),"__parsed_extra"===n?(i[n]=i[n]||[],i[n].push(s)):i[n]=s}return m.header&&(r>l.length?k("FieldMismatch","TooManyFields","Too many fields: expected "+l.length+" fields but parsed "+r,f+t):r<l.length&&k("FieldMismatch","TooFewFields","Too few fields: expected "+l.length+" fields but parsed "+r,f+t)),i}var t=1;!c.data.length||Array.isArray(c.data[0])?(c.data=c.data.map(e),t=c.data.length):c.data=e(c.data,0);m.header&&c.meta&&(c.meta.fields=l);return f+=t,c}()}function _(){return m.header&&0===l.length}function v(e,t){return r=e,m.dynamicTypingFunction&&void 0===m.dynamicTyping[r]&&(m.dynamicTyping[r]=m.dynamicTypingFunction(r)),!0===(m.dynamicTyping[r]||m.dynamicTyping)?"true"===t||"TRUE"===t||"false"!==t&&"FALSE"!==t&&(function(e){if(s.test(e)){var t=parseFloat(e);if(n<t&&t<i)return!0}return!1}(t)?parseFloat(t):h.test(t)?new Date(t):""===t?null:t):t;var r}function k(e,t,r,i){var n={type:e,code:t,message:r};void 0!==i&&(n.row=i),c.errors.push(n)}this.parse=function(e,t,r){var i=m.quoteChar||'"';if(m.newline||(m.newline=function(e,t){e=e.substring(0,1048576);var r=new RegExp(Q(t)+"([^]*?)"+Q(t),"gm"),i=(e=e.replace(r,"")).split("\r"),n=e.split("\n"),s=1<n.length&&n[0].length<i[0].length;if(1===i.length||s)return"\n";for(var a=0,o=0;o<i.length;o++)"\n"===i[o][0]&&a++;return a>=i.length/2?"\r\n":"\r"}(e,i)),u=!1,m.delimiter)J(m.delimiter)&&(m.delimiter=m.delimiter(e),c.meta.delimiter=m.delimiter);else{var n=function(e,t,r,i,n){var s,a,o,u;n=n||[",","\t","|",";",b.RECORD_SEP,b.UNIT_SEP];for(var h=0;h<n.length;h++){var f=n[h],d=0,l=0,c=0;o=void 0;for(var p=new E({comments:i,delimiter:f,newline:t,preview:10}).parse(e),g=0;g<p.data.length;g++)if(r&&y(p.data[g]))c++;else{var _=p.data[g].length;l+=_,void 0!==o?0<_&&(d+=Math.abs(_-o),o=_):o=_}0<p.data.length&&(l/=p.data.length-c),(void 0===a||d<=a)&&(void 0===u||u<l)&&1.99<l&&(a=d,s=f,u=l)}return{successful:!!(m.delimiter=s),bestDelimiter:s}}(e,m.newline,m.skipEmptyLines,m.comments,m.delimitersToGuess);n.successful?m.delimiter=n.bestDelimiter:(u=!0,m.delimiter=b.DefaultDelimiter),c.meta.delimiter=m.delimiter}var s=w(m);return m.preview&&m.header&&s.preview++,a=e,o=new E(s),c=o.parse(a,t,r),g(),d?{meta:{paused:!0}}:c||{meta:{paused:!1}}},this.paused=function(){return d},this.pause=function(){d=!0,o.abort(),a=J(m.chunk)?"":a.substring(o.getCharIndex())},this.resume=function(){t.streamer._halted?(d=!1,t.streamer.parseChunk(a,!0)):setTimeout(t.resume,3)},this.aborted=function(){return e},this.abort=function(){e=!0,o.abort(),c.meta.aborted=!0,J(m.complete)&&m.complete(c),a=""}}function Q(e){return e.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}function E(j){var z,M=(j=j||{}).delimiter,P=j.newline,U=j.comments,q=j.step,N=j.preview,B=j.fastMode,K=z=void 0===j.quoteChar||null===j.quoteChar?'"':j.quoteChar;if(void 0!==j.escapeChar&&(K=j.escapeChar),("string"!=typeof M||-1<b.BAD_DELIMITERS.indexOf(M))&&(M=","),U===M)throw new Error("Comment character same as delimiter");!0===U?U="#":("string"!=typeof U||-1<b.BAD_DELIMITERS.indexOf(U))&&(U=!1),"\n"!==P&&"\r"!==P&&"\r\n"!==P&&(P="\n");var W=0,H=!1;this.parse=function(i,t,r){if("string"!=typeof i)throw new Error("Input must be a string");var n=i.length,e=M.length,s=P.length,a=U.length,o=J(q),u=[],h=[],f=[],d=W=0;if(!i)return L();if(j.header&&!t){var l=i.split(P)[0].split(M),c=[],p={},g=!1;for(var _ in l){var m=l[_];J(j.transformHeader)&&(m=j.transformHeader(m,_));var y=m,v=p[m]||0;for(0<v&&(g=!0,y=m+"_"+v),p[m]=v+1;c.includes(y);)y=y+"_"+v;c.push(y)}if(g){var k=i.split(P);k[0]=c.join(M),i=k.join(P)}}if(B||!1!==B&&-1===i.indexOf(z)){for(var b=i.split(P),E=0;E<b.length;E++){if(f=b[E],W+=f.length,E!==b.length-1)W+=P.length;else if(r)return L();if(!U||f.substring(0,a)!==U){if(o){if(u=[],I(f.split(M)),F(),H)return L()}else I(f.split(M));if(N&&N<=E)return u=u.slice(0,N),L(!0)}}return L()}for(var w=i.indexOf(M,W),R=i.indexOf(P,W),C=new RegExp(Q(K)+Q(z),"g"),S=i.indexOf(z,W);;)if(i[W]!==z)if(U&&0===f.length&&i.substring(W,W+a)===U){if(-1===R)return L();W=R+s,R=i.indexOf(P,W),w=i.indexOf(M,W)}else if(-1!==w&&(w<R||-1===R))f.push(i.substring(W,w)),W=w+e,w=i.indexOf(M,W);else{if(-1===R)break;if(f.push(i.substring(W,R)),D(R+s),o&&(F(),H))return L();if(N&&u.length>=N)return L(!0)}else for(S=W,W++;;){if(-1===(S=i.indexOf(z,S+1)))return r||h.push({type:"Quotes",code:"MissingQuotes",message:"Quoted field unterminated",row:u.length,index:W}),T();if(S===n-1)return T(i.substring(W,S).replace(C,z));if(z!==K||i[S+1]!==K){if(z===K||0===S||i[S-1]!==K){-1!==w&&w<S+1&&(w=i.indexOf(M,S+1)),-1!==R&&R<S+1&&(R=i.indexOf(P,S+1));var O=A(-1===R?w:Math.min(w,R));if(i.substr(S+1+O,e)===M){f.push(i.substring(W,S).replace(C,z)),i[W=S+1+O+e]!==z&&(S=i.indexOf(z,W)),w=i.indexOf(M,W),R=i.indexOf(P,W);break}var x=A(R);if(i.substring(S+1+x,S+1+x+s)===P){if(f.push(i.substring(W,S).replace(C,z)),D(S+1+x+s),w=i.indexOf(M,W),S=i.indexOf(z,W),o&&(F(),H))return L();if(N&&u.length>=N)return L(!0);break}h.push({type:"Quotes",code:"InvalidQuotes",message:"Trailing quote on quoted field is malformed",row:u.length,index:W}),S++}}else S++}return T();function I(e){u.push(e),d=W}function A(e){var t=0;if(-1!==e){var r=i.substring(S+1,e);r&&""===r.trim()&&(t=r.length)}return t}function T(e){return r||(void 0===e&&(e=i.substring(W)),f.push(e),W=n,I(f),o&&F()),L()}function D(e){W=e,I(f),f=[],R=i.indexOf(P,W)}function L(e){return{data:u,errors:h,meta:{delimiter:M,linebreak:P,aborted:H,truncated:!!e,cursor:d+(t||0)}}}function F(){q(L()),u=[],h=[]}},this.abort=function(){H=!0},this.getCharIndex=function(){return W}}function _(e){var t=e.data,r=a[t.workerId],i=!1;if(t.error)r.userError(t.error,t.file);else if(t.results&&t.results.data){var n={abort:function(){i=!0,m(t.workerId,{data:[],errors:[],meta:{aborted:!0}})},pause:y,resume:y};if(J(r.userStep)){for(var s=0;s<t.results.data.length&&(r.userStep({data:t.results.data[s],errors:t.results.errors,meta:t.results.meta},n),!i);s++);delete t.results}else J(r.userChunk)&&(r.userChunk(t.results,n,t.file),delete t.results)}t.finished&&!i&&m(t.workerId,t.results)}function m(e,t){var r=a[e];J(r.userComplete)&&r.userComplete(t),r.terminate(),delete a[e]}function y(){throw new Error("Not implemented.")}function w(e){if("object"!=typeof e||null===e)return e;var t=Array.isArray(e)?[]:{};for(var r in e)t[r]=w(e[r]);return t}function v(e,t){return function(){e.apply(t,arguments)}}function J(e){return"function"==typeof e}return o&&(f.onmessage=function(e){var t=e.data;void 0===b.WORKER_ID&&t&&(b.WORKER_ID=t.workerId);if("string"==typeof t.input)f.postMessage({workerId:b.WORKER_ID,results:b.parse(t.input,t.config),finished:!0});else if(f.File&&t.input instanceof File||t.input instanceof Object){var r=b.parse(t.input,t.config);r&&f.postMessage({workerId:b.WORKER_ID,results:r,finished:!0})}}),(l.prototype=Object.create(h.prototype)).constructor=l,(c.prototype=Object.create(h.prototype)).constructor=c,(p.prototype=Object.create(p.prototype)).constructor=p,(g.prototype=Object.create(h.prototype)).constructor=g,b});</script>
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const DEFAULT_MAP = [
+  {col:'B', label:'사전 다운로드/무료 업그레이드', kw:'PlayStation 5 Upgrade Install', optional:true},
+  {col:'C', label:'Edition · Standard', kw:'Black Desert : Standard Edition'},
+  {col:'D', label:'Edition · Heroic',   kw:'Black Desert: Heroic Edition'},
+  {col:'E', label:'Edition · Mythical', kw:'Black Desert : Mythical Edition'},
+  {col:'F', label:'Item · Heroic',      kw:'Black Desert: Heroic Item Pack'},
+  {col:'G', label:'Item · Mythical',    kw:'Black Desert: Mythical Item Pack'},
+];
+const store = {
+  get(k){ try{ return localStorage.getItem('pspkg:'+k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem('pspkg:'+k, v); }catch(e){} }
+};
+
+// state
+let data = null; // {byName: Map(name -> {ids:Set, total, byDate: Map}), dates:[min,max], rows, fileName}
+let mapping = DEFAULT_MAP.map(m => ({...m}));
+try{ const saved = JSON.parse(store.get('map')||'null'); if(Array.isArray(saved)) saved.forEach(s => { const m = mapping.find(x => x.col===s.col); if(m && typeof s.kw==='string') m.kw = s.kw; }); }catch(e){}
+const savedTmp = store.get('tmp'); if(savedTmp !== null) $('tmp-text').value = savedTmp;
+const savedBase = store.get('base'); if(savedBase){ try{ const b = JSON.parse(savedBase); if(b.d) $('base-date').value = b.d; if(b.r) $('base-row').value = b.r; }catch(e){} }
+const savedB = store.get('useB'); if(savedB !== null) $('opt-b').checked = savedB === '1';
+
+// helpers
+const norm = s => String(s||'').toLowerCase().replace(/[–—−]/g,'-').replace(/\s*:\s*/g,': ').replace(/\s+/g,' ').trim();
+const fmt = n => n.toLocaleString('en-US');
+function toISO(v){
+  v = String(v||'').trim();
+  let m = v.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
+  if(m) return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+  m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m) return m[3]+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0');
+  return null;
+}
+function addDays(iso, n){ const d = new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+function diffDays(a, b){ return Math.round((new Date(b+'T00:00:00Z') - new Date(a+'T00:00:00Z'))/86400000); }
+function dateList(from, to){ const out=[]; if(!from||!to||from>to) return out; for(let d=from; d<=to; d=addDays(d,1)) out.push(d); return out; }
+function sheetRow(iso){
+  const bd = $('base-date').value, br = parseInt($('base-row').value,10);
+  if(!bd || !Number.isFinite(br)) return null;
+  return br + diffDays(bd, iso);
+}
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),1800); }
+async function copyText(text, container){
+  try{ await navigator.clipboard.writeText(text); toast('복사했습니다. 엑셀에 붙여넣으세요'); }
+  catch(e){
+    let ta = container.querySelector('textarea.fallback');
+    if(!ta){ ta = document.createElement('textarea'); ta.className='fallback'; container.prepend(ta); }
+    ta.value = text; ta.select(); toast('자동 복사가 막혀 있어요. 선택된 텍스트를 Ctrl+C 하세요');
+  }
+}
+
+// matching: a keyword hits a product when normalized name equals it, or name / any product ID contains it
+function matchProducts(keywords){
+  const hits = [];
+  if(!data) return hits;
+  const kws = keywords.map(norm).filter(Boolean);
+  if(!kws.length) return hits;
+  const entries = [...data.byName.entries()].map(([name,p]) => ({name, n:norm(name), ids:[...p.ids].map(norm)}));
+  // per keyword: exact product name (or exact Product ID) wins; only if none, fall back to partial match
+  const set = new Set();
+  kws.forEach(k => {
+    const exact = entries.filter(e => e.n === k || e.ids.includes(k));
+    const found = exact.length ? exact : entries.filter(e => e.n.includes(k) || e.ids.some(i => i.includes(k)));
+    found.forEach(e => set.add(e.name));
+  });
+  for(const [name] of data.byName) if(set.has(name)) hits.push(name);
+  return hits;
+}
+function seriesFor(names, dates){
+  return dates.map(d => names.reduce((s, nm) => s + (data.byName.get(nm).byDate.get(d)||0), 0));
+}
+
+// mapping UI
+function renderMap(){
+  const box = $('map');
+  box.querySelectorAll('.r').forEach(e => e.remove());
+  const useB = $('opt-b').checked;
+  mapping.forEach((m, i) => {
+    if(m.optional && !useB) return;
+    const col = document.createElement('span'); col.className='col r'; col.textContent = m.col;
+    const lab = document.createElement('span'); lab.className='r'; lab.textContent = m.label;
+    const wrap = document.createElement('span'); wrap.className='kw r';
+    const inp = document.createElement('input'); inp.type='text'; inp.id='kw-'+m.col; inp.value=m.kw; inp.setAttribute('aria-label', m.col+'열 상품명');
+    inp.addEventListener('change', () => { m.kw = inp.value; store.set('map', JSON.stringify(mapping.map(x=>({col:x.col,kw:x.kw})))); renderAll(); });
+    wrap.appendChild(inp);
+    const st = document.createElement('span'); st.className='r'; st.id='st-'+m.col;
+    box.append(col, lab, wrap, st);
+  });
+}
+
+function buildTable(el, headers, dates, cols, partialDate){
+  if(!dates.length){ el.innerHTML = '<div class="empty">선택한 기간에 날짜가 없습니다. 시작일과 종료일을 확인해 주세요.</div>'; return; }
+  const sums = cols.map(c => c.reduce((a,b)=>a+b,0));
+  let h = '<div class="tbl"><table><thead><tr><th>날짜</th><th>행</th>' + headers.map(x=>'<th>'+x+'</th>').join('') + '</tr></thead><tbody>';
+  h += '<tr class="sum"><td>합계</td><td class="rn"></td>' + sums.map(s=>'<td>'+fmt(s)+'</td>').join('') + '</tr>';
+  dates.forEach((d, i) => {
+    const r = sheetRow(d);
+    h += '<tr'+(d===partialDate?' class="partial"':'')+'><td>'+d+'</td><td class="rn">'+(r??'')+'</td>' + cols.map(c => { const v=c[i]; return '<td class="'+(v===0?'z':v<0?'neg':'')+'">'+fmt(v)+'</td>'; }).join('') + '</tr>';
+  });
+  el.innerHTML = h + '</tbody></table></div>';
+}
+function toTSV(headers, dates, cols){
+  const inclDate = $('opt-date').checked, inclHead = $('opt-head').checked;
+  const lines = [];
+  if(inclHead) lines.push([...(inclDate?['날짜']:[]), ...headers].join('\t'));
+  dates.forEach((d,i) => lines.push([...(inclDate?[d]:[]), ...cols.map(c=>c[i])].join('\t')));
+  return lines.join('\r\n');
+}
+
+let pkgOut = null, tmpOut = null;
+function currentDates(){ return dateList($('d-from').value, $('d-to').value); }
+
+function renderPkg(){
+  const useB = $('opt-b').checked;
+  const active = mapping.filter(m => !m.optional || useB);
+  if(!data){ active.forEach(m => { const s=$('st-'+m.col); if(s){ s.className='pill idle r'; s.textContent='대기'; } }); pkgOut=null; $('pkg-copy').disabled=true; return; }
+  const dates = currentDates();
+  const cols = [], headers = [];
+  active.forEach(m => {
+    const names = matchProducts([m.kw]);
+    const s = $('st-'+m.col);
+    if(!names.length){ s.className='pill no r'; s.textContent='없음'; }
+    else if(names.length>1){ s.className='pill warn r'; s.textContent=names.length+'개 합산'; s.title=names.join('\n'); }
+    else { s.className='pill ok r'; s.textContent='일치'; s.title=names[0]; }
+    cols.push(names.length ? seriesFor(names, dates) : dates.map(()=>0));
+    headers.push(m.col+' '+m.label.split(' · ').pop());
+  });
+  buildTable($('pkg-table'), headers, dates, cols, data.dates[1]);
+  pkgOut = {headers, dates, cols};
+  $('pkg-copy').disabled = !dates.length;
+  const r = dates.length ? sheetRow(dates[0]) : null;
+  const startCol = $('opt-date').checked ? 'A' : (useB ? 'B' : 'C');
+  $('pkg-hint').textContent = r ? '통합!'+startCol+r+' 셀에 붙여넣기 · '+dates.length+'일' : '기간을 선택해 주세요';
+}
+
+function parseTmpLines(){
+  return $('tmp-text').value.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map((l, i) => {
+    const eq = l.indexOf('=');
+    let label, rest;
+    if(eq >= 0){ label = l.slice(0,eq).trim() || ('Temporal '+(i+1)); rest = l.slice(eq+1); }
+    else { label = l; rest = l; }
+    return {label, kws: rest.split(',').map(s=>s.trim()).filter(Boolean)};
+  });
+}
+function renderTmp(){
+  const lines = parseTmpLines();
+  const mbox = $('tmp-matches');
+  if(!lines.length){ mbox.innerHTML=''; $('tmp-table').innerHTML='<div class="empty">Temporal 줄을 한 줄 이상 적어 주세요.</div>'; tmpOut=null; $('tmp-copy').disabled=true; return; }
+  if(!data){
+    mbox.innerHTML = lines.map(l => '<div class="mline"><div class="t">'+esc(l.label)+' <span class="pill idle">대기</span></div></div>').join('');
+    tmpOut=null; $('tmp-copy').disabled=true; return;
+  }
+  const dates = currentDates();
+  const cols = [], headers = [];
+  mbox.innerHTML = lines.map(l => {
+    const names = matchProducts(l.kws);
+    cols.push(names.length ? seriesFor(names, dates) : dates.map(()=>0));
+    headers.push(l.label);
+    let pill;
+    if(!l.kws.length) pill = '<span class="pill idle">키워드 없음 · 0으로 채움</span>';
+    else if(!names.length) pill = '<span class="pill no">일치하는 상품 없음 · 0으로 채움</span>';
+    else pill = '<span class="pill ok">'+names.length+'개 상품 합산</span>';
+    const list = names.length ? '<ul>'+names.map(n => { const p=data.byName.get(n); return '<li>'+esc(n)+' <code>('+[...p.ids].map(esc).join(', ')+')</code></li>'; }).join('')+'</ul>' : '';
+    return '<div class="mline"><div class="t">'+esc(l.label)+' '+pill+'</div>'+list+'</div>';
+  }).join('');
+  buildTable($('tmp-table'), headers, dates, cols, data.dates[1]);
+  tmpOut = {headers, dates, cols};
+  $('tmp-copy').disabled = !dates.length;
+  const r = dates.length ? sheetRow(dates[0]) : null;
+  $('tmp-hint').textContent = r ? (($('opt-date').checked?'날짜 열 포함 · ':'')+'통합!N'+r+' 셀에 붙여넣기 (열 순서대로)') : '기간을 선택해 주세요';
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function renderPlist(){
+  const box = $('plist');
+  if(!data){ return; }
+  const items = [...data.byName.entries()].sort((a,b)=>b[1].total-a[1].total);
+  box.innerHTML = '';
+  items.forEach(([name,p]) => {
+    const b = document.createElement('button'); b.type='button';
+    b.innerHTML = esc(name)+' <em>'+fmt(p.total)+'</em>';
+    b.addEventListener('click', () => {
+      const ta = $('tmp-text'); const v = ta.value.replace(/\s+$/,'');
+      ta.value = (v ? v+'\n' : '') + name.replace(/\s*\.\.\.$/,'') + ' = ' + name.replace(/\s*\.\.\.$/,'');
+      store.set('tmp', ta.value); renderTmp(); toast('Temporal에 추가했습니다');
+    });
+    box.appendChild(b);
+  });
+}
+
+function renderAll(){ renderMap(); renderPkg(); renderTmp(); }
+
+// file load
+function handleFile(file){
+  if(!file) return;
+  $('f-msg').textContent = '읽는 중…';
+  const byName = new Map(); let rows = 0, minD = null, maxD = null, bad = 0;
+  Papa.parse(file, {
+    header:true, skipEmptyLines:true,
+    complete: res => {
+      const f = res.meta.fields || [];
+      const need = ['Date','Product Name','Sales Quantity'];
+      const miss = need.filter(n => !f.includes(n));
+      if(miss.length){ $('f-msg').textContent = '필요한 열이 없습니다: '+miss.join(', ')+'. SKU Sales Cube CSV가 맞는지 확인해 주세요.'; return; }
+      for(const r of res.data){
+        const d = toISO(r['Date']); const name = (r['Product Name']||'').trim();
+        const q = Number(String(r['Sales Quantity']??'').replace(/,/g,''));
+        if(!d || !name || !Number.isFinite(q)){ bad++; continue; }
+        rows++;
+        let p = byName.get(name); if(!p){ p = {ids:new Set(), total:0, byDate:new Map()}; byName.set(name,p); }
+        if(r['Product ID']) p.ids.add(r['Product ID'].trim());
+        p.total += q; p.byDate.set(d, (p.byDate.get(d)||0) + q);
+        if(!minD || d<minD) minD=d; if(!maxD || d>maxD) maxD=d;
+      }
+      data = {byName, dates:[minD,maxD], rows, fileName:file.name};
+      $('f-name').textContent = file.name.length>34 ? file.name.slice(0,32)+'…' : file.name;
+      $('f-name').title = file.name;
+      $('f-rows').textContent = fmt(rows);
+      $('f-range').textContent = minD ? minD.slice(2)+' ~ '+maxD.slice(2) : '—';
+      $('f-prod').textContent = fmt(byName.size);
+      $('f-msg').textContent = '환불·무료·바우처를 포함한 전체 Sales Quantity 합계입니다. 마지막 날짜('+maxD+')는 추출 시점에 따라 하루치가 다 안 들어왔을 수 있어요.' + (bad ? ' 읽지 못한 행 '+bad+'개는 건너뛰었습니다.' : '');
+      $('d-from').value = minD; $('d-to').value = maxD;
+      $('d-from').min = $('d-to').min = minD; $('d-from').max = $('d-to').max = maxD;
+      renderPlist(); renderAll();
+    },
+    error: err => { $('f-msg').textContent = '파일을 읽지 못했습니다: '+err.message; }
+  });
+}
+
+const drop = $('drop');
+drop.addEventListener('click', () => $('file').click());
+drop.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); $('file').click(); } });
+$('file').addEventListener('change', e => handleFile(e.target.files[0]));
+['dragenter','dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
+
+['d-from','d-to','opt-date','opt-head'].forEach(id => $(id).addEventListener('change', () => { renderPkg(); renderTmp(); }));
+['base-date','base-row'].forEach(id => $(id).addEventListener('change', () => { store.set('base', JSON.stringify({d:$('base-date').value, r:$('base-row').value})); renderPkg(); renderTmp(); }));
+$('opt-b').addEventListener('change', () => { store.set('useB', $('opt-b').checked?'1':'0'); renderAll(); });
+$('d-reset').addEventListener('click', () => { if(data){ $('d-from').value=data.dates[0]; $('d-to').value=data.dates[1]; renderPkg(); renderTmp(); } });
+let tmpTimer; $('tmp-text').addEventListener('input', () => { store.set('tmp', $('tmp-text').value); clearTimeout(tmpTimer); tmpTimer = setTimeout(renderTmp, 250); });
+$('pkg-copy').addEventListener('click', () => { if(pkgOut) copyText(toTSV(pkgOut.headers, pkgOut.dates, pkgOut.cols), $('pkg-table')); });
+$('tmp-copy').addEventListener('click', () => { if(tmpOut) copyText(toTSV(tmpOut.headers, tmpOut.dates, tmpOut.cols), $('tmp-table')); });
+
+renderAll();
+})();
+</script>
+
+</body>
+</html>
